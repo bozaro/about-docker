@@ -14,18 +14,93 @@ description: |
     <h2>Docker</h2>
     <img src="docker.svg" style="position: absolute; bottom: 50px; right: 50px; width: 320px"/>
     <ul>
-        <li>Почему Docker?</li>
-        <li>Какие есть виды вируализации?</li>
-        <li>Что такое Dockerfile?</li>
-        <li>Работа с контейнерами.</li>
+        <li>Что такое Docker и какие проблемы он решает?</li>
+        <li>Азы использования</li>
+        <li>Особенности сборки контейнеров</li>
+        <li>Best practics</li>
     </ul>
+</section>
+
+<section class="slide">
+    <h2>Что такое Docker</h2>
+    <figure>
+        <dl>
+            <dt>Docker</dt>
+            <dd>Программное обеспечение для автоматизации развёртывания и управления приложениями в средах с
+                поддержкой контейнеризации. Позволяет «упаковать» приложение со всем его окружением и зависимостями в
+                контейнер.
+            </dd>
+        </dl>
+        <figcaption><a href="https://ru.wikipedia.org/wiki/Docker">https://ru.wikipedia.org/wiki/Docker</a></figcaption>
+    </figure>
+</section>
+
+<section class="slide">
+    <h2>Контейнеры VS Виртуальные машины</h2>
+    <dl>
+        <dt>Контейнеризация</dt>
+        <dd>Метод виртуализации, при котором ядро операционной системы поддерживает несколько изолированных экземпляров
+            пространства пользователя вместо одного.
+        </dd>
+        <dt>Виртуальная машина</dt>
+        <dd>Это окружение, которое представляется для «гостевой» операционной системы, как аппаратное. Однако на самом
+            деле это программное окружение, которое эмулируется программным обеспечением хостовой системы.
+        </dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Контейнеры</h2>
+    <h3>Плюсы</h3>
+    <ul>
+        <li>Минимальные накладные расходы</li>
+        <li>Общее управление ресурсами (память, кэши)</li>
+    </ul>
+    <h3>Минусы</h3>
+    <ul>
+        <li>Возможна толька в рамках одной ОС</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Виртуальные машины</h2>
+    <h3>Плюсы</h3>
+    <ul>
+        <li>Более изолированная виртуализация</li>
+        <li>Можно запустить другую операционную систему</li>
+        <li>Достаточно эффективна в рамках одной архитектуры</li>
+    </ul>
+    <h3>Минусы</h3>
+    <ul>
+        <li>Виртуальная машина потребляет фиксированное количество памяти</li>
+        <li>Раздельные кэши между гипервизором и виртуальной машиной</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Linux vs MacOS vs Windows</h2>
+    <h3>Linux</h3>
+    <p>Docker использует встроенную поддержку контейнеров.</p>
+    <div class="next">
+        <h3>MacOS, Windows</h3>
+        <p>Docker Server запускается под Linux внутри виртуальной машины.</p>
+        <div class="next important">
+            <p>Виртуальная машина с Docker Server:</p>
+            <ul>
+                <li>занимает фиксированное количество оперативной памяти;</li>
+                <li>хранит служебную информацию на виртуальном диске, который только увеличивается.</li>
+            </ul>
+        </div>
+    </div>
 </section>
 
 <section class="slide">
     <h2>Полезные ссылки</h2>
     <ul style="font-size: 90%">
         <li><a href="https://docs.docker.com/">https://docs.docker.com/</a></li>
-        <li><a href="https://www.docker.com/sites/default/files/d8/2019-09/docker-cheat-sheet.pdf">https://www.docker.com/sites/default/files/d8/2019-09/docker-cheat-sheet.pdf</a></li>
-        <li><a href="https://github.com/wsargent/docker-cheat-sheet">https://github.com/wsargent/docker-cheat-sheet</a></li>
+        <li><a href="https://www.docker.com/sites/default/files/d8/2019-09/docker-cheat-sheet.pdf">https://www.docker.com/sites/default/files/d8/2019-09/docker-cheat-sheet.pdf</a>
+        </li>
+        <li><a href="https://github.com/wsargent/docker-cheat-sheet">https://github.com/wsargent/docker-cheat-sheet</a>
+        </li>
     </ul>
 </section>
