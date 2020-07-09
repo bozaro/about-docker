@@ -1,1 +1,1 @@
-node tools/build.js -t cdn -n python x86asm cs java bash bat cpp diff sql
+node tools/build.js -t cdn :common -n python x86asm csharp java bash cpp diff sql dockerfile shell
