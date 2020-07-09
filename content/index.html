@@ -326,22 +326,35 @@ $ # helm --help
     <p>Выполяется команда, полученная конкатенацией <code>Entrypoint</code> и <code>COMMAND ARG...</code>.</p>
     <table>
         <thead>
-        <tr><th>image</th><th>Entrypoint</th><th>Cmd<th/></tr>
+        <tr>
+            <th>image</th>
+            <th>Entrypoint</th>
+            <th>Cmd
+            <th/>
+        </tr>
         </thead>
         <tbody>
         <tr>
             <td>alpine</td>
-            <td><pre><code class="json">null</code></pre></td>
-            <td><pre><code class="json">["/bin/sh"]</code></pre></td>
+            <td>
+                <pre><code class="json">null</code></pre>
+            </td>
+            <td>
+                <pre><code class="json">["/bin/sh"]</code></pre>
+            </td>
         </tr>
         <tr>
             <td>alpine/helm</td>
-            <td><pre><code class="json">["helm"]</code></pre></td>
-            <td><pre><code class="json">["--help"]</code></pre></td>
+            <td>
+                <pre><code class="json">["helm"]</code></pre>
+            </td>
+            <td>
+                <pre><code class="json">["--help"]</code></pre>
+            </td>
         </tr>
         </tbody>
     </table>
-    <pre style="font-size: 90%"><code class="shell" >$ docker inspect alpine/helm | jq -c ".[0].Config.Entrypoint"
+    <pre style="font-size: 90%"><code class="shell">$ docker inspect alpine/helm | jq -c ".[0].Config.Entrypoint"
 ["helm"]
 
 $ docker inspect alpine/helm | jq -c ".[0].Config.Cmd"
@@ -559,9 +572,61 @@ $ docker rm ${id}
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>метаданные о происхождении контейнера</mark>
-    </h2>
+    <h2>LABEL-ы с информацией о контейнере</h2>
+    <p>При сборке docker-образов крайне желательно заполнять label-ы, чтобы не было вопросов из серии "откуда вообще
+        этот образ взялся":</p>
+    <dl style="font-size: 80%">
+        <dt>org.opencontainers.image.created</dt>
+        <dd>дата создания образа</dd>
+
+        <dt>org.opencontainers.image.ref.ci</dt>
+        <dd>ссылка на сборку образа в CI</dd>
+
+        <dt>org.opencontainers.image.ref.dockerfile</dt>
+        <dd>имя Dockerfile из которого собран образ</dd>
+
+        <dt>org.opencontainers.image.ref.dockerfile</dt>
+        <dd>имя Dockerfile из которого собран образ</dd>
+
+        <dt>org.opencontainers.image.revision</dt>
+        <dd>ревизия, от которой собран образ</dd>
+
+        <dt>org.opencontainers.image.source</dt>
+        <dd>репозиторий, из которого собран образ</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>LABEL-ы с информацией о контейнере</h2>
+    <p>Пример:</p>
+    <pre><code class="text" style="font-size: 70%">com.joom.retention.maxCount: 5
+com.joom.retention.maxCountGroup: master
+org.opencontainers.image.created: 2020-06-25T16:20:56Z
+org.opencontainers.image.ref.ci: https://jenkins.joom.it/job/docker-images/job/...
+org.opencontainers.image.ref.dockerfile: backend-api-test-base/Dockerfile
+org.opencontainers.image.revision: 41a1d8a485ae38311b141e7c355acf081dcc7f11
+org.opencontainers.image.source: https://github.com/joomcode/docker-images.git
+</code></pre>
+    <p>
+        Аннотации взяты отсюда: <a href="https://github.com/opencontainers/image-spec/blob/master/annotations.md">https://github.com/opencontainers/image-spec/blob/master/annotations.md</a>
+    </p>
+    <p>
+        Пост в Notion: <a
+            href="https://www.notion.so/joomteam/Docker-image-style-guide-6f9e2542f3e24a69b6d21bfa1bbd9761">https://www.notion.so/joomteam/Docker-image-style-guide-6f9e2542f3e24a69b6d21bfa1bbd9761</a>
+    </p>
+</section>
+
+<section class="slide">
+    <h2>LABEL-ы с информацией о контейнере</h2>
+    <p>Чтобы не захламлять Dockerfile, можно воспользоваться конструкцией вида:</p>
+    <pre><code class="shell" style="font-size: 90%">$ docker build \
+    --label org.opencontainers.image.created=$buildDate \
+    --label org.opencontainers.image.ref.ci=$BUILD_URL \
+    --label org.opencontainers.image.ref.dockerfile=$dockerFile \
+    --label org.opencontainers.image.source=$GIT_URL \
+    --label org.opencontainers.image.revision=$GIT_COMMIT \
+    ...
+    </code></pre>
 </section>
 
 <section class="slide">
@@ -601,6 +666,8 @@ $ docker rm ${id}
         <li><a href="https://www.docker.com/sites/default/files/d8/2019-09/docker-cheat-sheet.pdf">https://www.docker.com/sites/default/files/d8/2019-09/docker-cheat-sheet.pdf</a>
         </li>
         <li><a href="https://github.com/wsargent/docker-cheat-sheet">https://github.com/wsargent/docker-cheat-sheet</a>
+        </li>
+        <li><a href="https://github.com/opencontainers/image-spec/blob/master/annotations.md">https://github.com/opencontainers/image-spec/blob/master/annotations.md</a>
         </li>
     </ul>
 </section>
