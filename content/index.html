@@ -309,15 +309,118 @@ VOLUME /workspace
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>как посмотреть метки контейнера?</mark>
-    </h2>
+    <h2>Метки Docker-образа</h2>
+    <p>Контейнер может содержать метки (LABEL).</p>
+    <p>Пример Dockerfile:</p>
+    <pre><code class="dockerfile">FROM ubuntu:18.04
+LABEL "com.example.vendor"="ACME Incorporated"
+LABEL com.example.label-with-value="foo"
+LABEL version="1.0"
+</code></pre>
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>docker logs</mark>
-    </h2>
+    <h2>Метки Docker-образа</h2>
+    <p>Посмотреть метаданные контейнера/образа можно командой вида:</p>
+    <pre><code class="shell">$ docker build -t test .
+
+$ docker inspect test | jq ".[0].ContainerConfig.Labels"
+{
+  "com.example.label-with-value": "foo",
+  "com.example.vendor": "ACME Incorporated",
+  "version": "1.0"
+}
+</code></pre>
+    </p>
+</section>
+
+<section class="slide">
+    <h2>Метки Docker-образа</h2>
+    <img src="jfrog.png" style="position: absolute; bottom: 50px; right: 50px; width: 50%"/>
+    <p>Или через UI от Docker Registry</p>
+    <dl>
+        <dt>jfrog.joom.it/docker-images/mongos:latest</dt>
+        <dd><a href="https://jfrog.joom.it/ui/repos/tree/Properties/docker-images%2Fmongos%2Flatest%2Fmanifest.json">https://jfrog.joom.it/ui/repos/tree/Properties/docker-images%2Fmongos%2Flatest%2Fmanifest.json</a>
+        </dd>
+    </dl>
+
+</section>
+
+<section class="slide">
+    <h2>Docker сохраняет stdout и stderr</h2>
+    <pre><code class="shell">$ id=$(docker run --detach docker/whalesay cowsay boo)
+
+$ sleep 5
+
+$ docker inspect ${id} | jq ".[0].State.Status"
+"exited"
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Docker сохраняет stdout и stderr</h2>
+    <pre><code class="shell">$ docker logs ${id}
+<div style="font-size: 75%"> _____
+< boo >
+ -----
+    \
+     \
+      \
+                    ##        .
+              ## ## ##       ==
+           ## ## ## ##      ===
+       /""""""""""""""""___/ ===
+  ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~
+       \______ o          __/
+        \    \        __/
+          \____\______/
+</div>
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Docker сохраняет stdout и stderr</h2>
+    <pre><code class="shell">$ docker logs --timestamps ${id}
+<div style="font-size: 75%">2020-07-09T12:35:19.788330077Z  _____
+2020-07-09T12:35:19.788348669Z < boo >
+2020-07-09T12:35:19.788354027Z  -----
+2020-07-09T12:35:19.788356697Z     \
+2020-07-09T12:35:19.788358973Z      \
+2020-07-09T12:35:19.788361128Z       \
+2020-07-09T12:35:19.788363290Z                     ##        .
+2020-07-09T12:35:19.788365599Z               ## ## ##       ==
+2020-07-09T12:35:19.788367782Z            ## ## ## ##      ===
+2020-07-09T12:35:19.788369934Z        /""""""""""""""""___/ ===
+2020-07-09T12:35:19.788372305Z   ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~
+2020-07-09T12:35:19.788374442Z        \______ o          __/
+2020-07-09T12:35:19.788376591Z         \    \        __/
+2020-07-09T12:35:19.788378853Z           \____\______/
+</div>
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Docker сохраняет stdout и stderr</h2>
+    <pre><code class="shell">$ sudo cat /var/lib/docker/containers/${id}/${id}-json.log
+<div style="font-size: 45%">{"log":" _____ \n","stream":"stdout","time":"2020-07-09T12:35:19.788330077Z"}
+{"log":"\u003c boo \u003e\n","stream":"stdout","time":"2020-07-09T12:35:19.788348669Z"}
+{"log":" ----- \n","stream":"stdout","time":"2020-07-09T12:35:19.788354027Z"}
+{"log":"    \\\n","stream":"stdout","time":"2020-07-09T12:35:19.788356697Z"}
+{"log":"     \\\n","stream":"stdout","time":"2020-07-09T12:35:19.788358973Z"}
+{"log":"      \\     \n","stream":"stdout","time":"2020-07-09T12:35:19.788361128Z"}
+{"log":"                    ##        .            \n","stream":"stdout","time":"2020-07-09T12:35:19.78836329Z"}
+{"log":"              ## ## ##       ==            \n","stream":"stdout","time":"2020-07-09T12:35:19.788365599Z"}
+{"log":"           ## ## ## ##      ===            \n","stream":"stdout","time":"2020-07-09T12:35:19.788367782Z"}
+{"log":"       /\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"___/ ===        \n","stream":"stdout","time":"2020-07-09T12:35:19.788369934Z"}
+{"log":"  ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~   \n","stream":"stdout","time":"2020-07-09T12:35:19.788372305Z"}
+{"log":"       \\______ o          __/            \n","stream":"stdout","time":"2020-07-09T12:35:19.788374442Z"}
+{"log":"        \\    \\        __/             \n","stream":"stdout","time":"2020-07-09T12:35:19.788376591Z"}
+{"log":"          \\____\\______/   \n","stream":"stdout","time":"2020-07-09T12:35:19.788378853Z"}
+</div>
+$ docker rm ${id}
+</code></pre>
+    <div class="important"><p>По-умолчанию Docker не ротирует логи.</p>
+        <p>Из-за этого логи могут занять всё доступное место на диске Docker <nobr>Server-а.</nobr></p></div>
 </section>
 
 <section class="slide">
