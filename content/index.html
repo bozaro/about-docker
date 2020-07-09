@@ -14,7 +14,7 @@ description: Docker for backend devs
 </section>
 
 <section class="slide">
-    <h2 class="shout shrink">Основы Docker</h2>
+    <h2 class="shout">Основы Docker</h2>
 </section>
 
 <section class="slide">
@@ -224,7 +224,7 @@ $ docker run --rm -it ubuntu hostname -I
 
 <section class="slide">
     <h2>Общая файловая система</h2>
-    <pre><code class="shell">$ docker run --volume $(pwd):/workspace:ro \
+    <pre><code class="shell">$ docker run --rm --volume $(pwd):/workspace:ro \
     alpine \
     ls /workspace
 Jenkinsfile
@@ -241,13 +241,13 @@ themes
 
 <section class="slide">
     <h2>Аккуратнее с правами доступа</h2>
-    <pre><code class="shell">$ docker run ubuntu:latest id
+    <pre><code class="shell">$ docker run --rm ubuntu:latest id
 uid=0(root) gid=0(root) groups=0(root)
 
-$ docker run --user 1000:100 ubuntu:latest id
+$ docker run --rm --user 1000:100 ubuntu:latest id
 uid=1000 gid=100(users) groups=100(users)
 
-$ docker run bitnami/elasticsearch:latest id
+$ docker run --rm bitnami/elasticsearch:latest id
 uid=1001 gid=0(root) groups=0(root)
 </code></pre>
     <div class="important">
@@ -260,7 +260,7 @@ uid=1001 gid=0(root) groups=0(root)
     <pre><code class="shell">$ id
 uid=1000(bozaro) gid=1000(bozaro)
 
-$ docker run --volume $(pwd):/workspace alpine \
+$ docker run --rm --volume $(pwd):/workspace alpine \
     touch /workspace/file.txt
 
 $ ls -al file.txt
@@ -269,9 +269,37 @@ $ ls -al file.txt
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>docker volume</mark>
-    </h2>
+    <h2>Docker volumes</h2>
+    <pre><code class="shell" style="font-size: 85%">$ vid=$(docker volume create)
+
+$ echo ${vid}
+f122409a44bd69485a02f1887b76fbc37936cd8bc387443194a1c9903057d448
+
+$ docker run --rm --volume ${vid}:/workspace alpine \
+    ls /workspace
+
+$ docker run --rm --volume ${vid}:/workspace alpine \
+    touch /workspace/file.txt
+
+$ docker run --rm --volume ${vid}:/workspace alpine \
+    ls /workspace
+file.txt
+
+$ docker volume rm ${vid}
+f122409a44bd69485a02f1887b76fbc37936cd8bc387443194a1c9903057d448
+    </code></pre>
+</section>
+
+
+<section class="slide">
+    <h2>Docker volumes</h2>
+    <p>Создание VOLUME может быть прописано в метаданных Docker-образа, например:</p>
+    <p>
+    <pre><code class="dockerfile">FROM ubuntu:18.04
+VOLUME /workspace
+</code></pre>
+    </p>
+    <p>Обычно, такие VOLUME удаляются при удалении контейнера. Но иногда этого не происходит и они "подвисают".</p>
 </section>
 
 <section class="slide">
@@ -293,7 +321,7 @@ $ ls -al file.txt
 </section>
 
 <section class="slide">
-    <h2 class="shout shrink">Сборка контейнеров</h2>
+    <h2 class="shout">Сборка контейнеров</h2>
 </section>
 
 <section class="slide">
@@ -345,7 +373,7 @@ $ ls -al file.txt
 </section>
 
 <section class="slide">
-    <h2 class="shout shrink">Best practics</h2>
+    <h2 class="shout">Best practics</h2>
 </section>
 
 <section class="slide">
