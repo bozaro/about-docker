@@ -1,0 +1,22 @@
+baseUrl: "/"
+languageCode: "ru"
+title: "Немного о Docker"
+theme: "joom-template"
+
+relativeURLs: true
+disableKinds:
+- 404
+- RSS
+metadataFormat: "yaml"
+
+blackfriday:
+  sourceRelativeLinksEval: true
+
+params:
+  author: "Навроцкий Артем"
+  github: http://github.com/bozaro/about-docker/
+  email: bozaro@yandex.ru
+  description: "Внутренняя презентация о Docker"
+  highlightTheme: "idea"
+  useMath: false
+  favicon: "favicon.png"
