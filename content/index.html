@@ -1,14 +1,6 @@
 ---
 title: Немного о Docker
-description: |
-  Docker for backend devs
-   - на MacOS - он живёт в виртуалке
-   - локальная чистка докера
-   - чистка образов в JFrog
-   - переиспользование образов при сборке
-   - multistage сборка
-   - Jenkins vs Docker
-   - известные грабли
+description: Docker for backend devs
 ---
 <section class="slide">
     <h2>Docker</h2>
@@ -108,7 +100,9 @@ description: |
 </section>
 
 <section class="slide">
-    <h2><mark>слайды про настройку памяти</mark></h2>
+    <h2>
+        <mark>слайды про настройку памяти</mark>
+    </h2>
 </section>
 
 <section class="slide">
@@ -127,35 +121,88 @@ description: |
 </section>
 
 <section class="slide">
-    <h2><mark>docker run hello world</mark></h2>
+    <h2>Что занимает место на диске?</h2>
+    <pre><code class="shell">$ docker system df
+TYPE           TOTAL  ACTIVE  SIZE     RECLAIMABLE
+Images         46     3       18.59GB  17.33GB (93%)
+Containers     3      2       1.169GB  2.198kB (0%)
+Local Volumes  1      1       1.049GB  0B (0%)
+Build Cache    6      0       0B       0B
+        </code></pre>
 </section>
 
 <section class="slide">
-    <h2><mark>docker system df и etc...</mark></h2>
+    <h2>Удаление всего лишнего</h2>
+    <pre><code class="shell">$ docker system prune
+WARNING! This will remove:
+  - all stopped containers
+  - all networks not used by at least one container
+  - all dangling images
+  - all dangling build cache
+
+Are you sure you want to continue? [y/N]
+        </code></pre>
 </section>
 
 <section class="slide">
-    <h2><mark>docker run --port</mark></h2>
+    <h2>Более точечная чистка</h2>
+    <h3>Контейнеры</h3>
+    <pre><code class="shell">$ docker container ls -a
+$ docker container ps -a
+$ docker container prune
+        </code></pre>
+    <h3>Образы</h3>
+    <pre><code class="shell">$ docker image ls
+$ docker images
+$ docker image prune
+        </code></pre>
 </section>
 
 <section class="slide">
-    <h2><mark>docker run --env</mark></h2>
+    <h2>Пример запуска Docker-образа</h2>
+    <pre><code class="shell">$ docker run --rm -it alpine:latest sh
+# ls
+bin    home   mnt    root   srv    usr
+dev    lib    opt    run    sys    var
+etc    media  proc   sbin   tmp
+# exit
+</code></pre>
 </section>
 
 <section class="slide">
-    <h2><mark>docker run --mount</mark></h2>
+    <h2>
+        <mark>docker run --port</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>docker volume</mark></h2>
+    <h2>
+        <mark>docker run --env</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>docker run, entrypoint, bash</mark></h2>
+    <h2>
+        <mark>docker run --mount</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>как посмотреть метки контейнера?</mark></h2>
+    <h2>
+        <mark>docker volume</mark>
+    </h2>
+</section>
+
+<section class="slide">
+    <h2>
+        <mark>docker run, entrypoint, bash</mark>
+    </h2>
+</section>
+
+<section class="slide">
+    <h2>
+        <mark>как посмотреть метки контейнера?</mark>
+    </h2>
 </section>
 
 <section class="slide">
@@ -163,31 +210,45 @@ description: |
 </section>
 
 <section class="slide">
-    <h2><mark>кратко про слои</mark></h2>
+    <h2>
+        <mark>кратко про слои</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>сколько занимает контейнер?</mark></h2>
+    <h2>
+        <mark>сколько занимает контейнер?</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>apt update & apt install</mark></h2>
+    <h2>
+        <mark>apt update & apt install</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>multi target</mark></h2>
+    <h2>
+        <mark>multi target</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>build cache</mark></h2>
+    <h2>
+        <mark>build cache</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>сигналы (alpine/ubuntu/tini)</mark></h2>
+    <h2>
+        <mark>сигналы (alpine/ubuntu/tini)</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>porter</mark></h2>
+    <h2>
+        <mark>porter</mark>
+    </h2>
 </section>
 
 <section class="slide">
@@ -195,27 +256,39 @@ description: |
 </section>
 
 <section class="slide">
-    <h2><mark>метаданные о происхождении контейнера</mark></h2>
+    <h2>
+        <mark>метаданные о происхождении контейнера</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>чистка контейнеров</mark></h2>
+    <h2>
+        <mark>чистка контейнеров</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>несколько процессов в контейнере</mark></h2>
+    <h2>
+        <mark>несколько процессов в контейнере</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>docker compose</mark></h2>
+    <h2>
+        <mark>docker compose</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>supervisord</mark></h2>
+    <h2>
+        <mark>supervisord</mark>
+    </h2>
 </section>
 
 <section class="slide">
-    <h2><mark>docker vs jenkins</mark></h2>
+    <h2>
+        <mark>docker vs jenkins</mark>
+    </h2>
 </section>
 
 <section class="slide">
