@@ -170,21 +170,102 @@ etc    media  proc   sbin   tmp
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>docker run --port</mark>
-    </h2>
+    <h2>Взаимодействие с контейнером</h2>
+    <ul>
+        <li>переменные окружения</li>
+        <li>сетевое взаимодействие</li>
+        <li>общая файловая система</li>
+    </ul>
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>docker run --env</mark>
-    </h2>
+    <h2>Передача переменных окружения</h2>
+    <pre><code class="shell">$ docker run --rm \
+    --hostname=foobar \
+    --env FOO=bar \
+    --env BAR=baz \
+    alpine:latest \
+    env
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin
+HOSTNAME=foobar
+FOO=bar
+BAR=baz
+HOME=/root
+</code></pre>
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>docker run --mount</mark>
-    </h2>
+    <h2>Сетевое взаимодействие</h2>
+    <h3>Сеть Docker Server-а</h3>
+    <pre><code class="shell">$ docker run --rm -it --net host nginx
+
+$ docker run --rm -it --net host ubuntu hostname -I
+172.16.1.150 172.17.0.1
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Сетевое взаимодействие</h2>
+    <h3>Изолированная сеть</h3>
+    <pre><code class="shell">$ docker run --rm -it \
+    --publish 8080:80 \
+    --publish :8081:80/tcp \
+    --publish 127.0.0.1:8082:80/tcp \
+    nginx
+
+$ docker run --rm -it ubuntu hostname -I
+172.17.0.3
+</code></pre>
+    <div class="important">
+        <p>Если порт занят, то под MacOS контейнер запустится, но трафик пойдет в локальный сервис, а не в
+            контейнер.</p>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Общая файловая система</h2>
+    <pre><code class="shell">$ docker run --volume $(pwd):/workspace:ro \
+    alpine \
+    ls /workspace
+Jenkinsfile
+config.yaml
+content
+hugo.sh
+public
+resources
+start.sh
+static
+themes
+    </code> </pre>
+</section>
+
+<section class="slide">
+    <h2>Аккуратнее с правами доступа</h2>
+    <pre><code class="shell">$ docker run ubuntu:latest id
+uid=0(root) gid=0(root) groups=0(root)
+
+$ docker run --user 1000:100 ubuntu:latest id
+uid=1000 gid=100(users) groups=100(users)
+
+$ docker run bitnami/elasticsearch:latest id
+uid=1001 gid=0(root) groups=0(root)
+</code></pre>
+    <div class="important">
+        <p>Контейнер пишет с теми правами, от которых запущен его процесс.</p>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Права на docker это почти sudo</h2>
+    <pre><code class="shell">$ id
+uid=1000(bozaro) gid=1000(bozaro)
+
+$ docker run --volume $(pwd):/workspace alpine \
+    touch /workspace/file.txt
+
+$ ls -al file.txt
+-rw-r--r-- 1 root root 0 июл  9 14:33 file.txt
+</code></pre>
 </section>
 
 <section class="slide">
