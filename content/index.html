@@ -100,9 +100,8 @@ description: Docker for backend devs
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>слайды про настройку памяти</mark>
-    </h2>
+    <h2>Настройка памяти в MacOS</h2>
+    <img src="docker-memory.png" style="height: 72%"/>
 </section>
 
 <section class="slide">
@@ -420,7 +419,10 @@ $ docker inspect ${id} | jq ".[0].State.Status"
 $ docker rm ${id}
 </code></pre>
     <div class="important"><p>По-умолчанию Docker не ротирует логи.</p>
-        <p>Из-за этого логи могут занять всё доступное место на диске Docker <nobr>Server-а.</nobr></p></div>
+        <p>Из-за этого логи могут занять всё доступное место на диске Docker
+            <nobr>Server-а.</nobr>
+        </p>
+    </div>
 </section>
 
 <section class="slide">
