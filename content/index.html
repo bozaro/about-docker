@@ -302,9 +302,86 @@ VOLUME /workspace
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>docker run, entrypoint, bash</mark>
-    </h2>
+    <h2>Какую команду выполнит Docker?</h2>
+    <h3>docker run IMAGE [COMMAND] [ARG...]</h3>
+    <pre><code class="shell">$ docker run alpine/helm version
+<div class="next">version.BuildInfo{Version:"v3.2.4", GitCommit:...
+
+$ # helm version
+
+</div><div class="next">$ docker run alpine/helm
+</div><div class="next">The Kubernetes package manager
+
+Common actions for Helm:
+
+- helm search:    search for charts
+...
+$ # helm --help
+</div></code></pre>
+</section>
+
+<section class="slide">
+    <h2>Какую команду выполнит Docker?</h2>
+    <p>Если <code>COMMAND ARG...</code> не указан, то он считается равным <code>Cmd</code>.</p>
+    <p>Выполяется команда, полученная конкатенацией <code>Entrypoint</code> и <code>COMMAND ARG...</code>.</p>
+    <table>
+        <thead>
+        <tr><th>image</th><th>Entrypoint</th><th>Cmd<th/></tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>alpine</td>
+            <td><pre><code class="json">null</code></pre></td>
+            <td><pre><code class="json">["/bin/sh"]</code></pre></td>
+        </tr>
+        <tr>
+            <td>alpine/helm</td>
+            <td><pre><code class="json">["helm"]</code></pre></td>
+            <td><pre><code class="json">["--help"]</code></pre></td>
+        </tr>
+        </tbody>
+    </table>
+    <pre style="font-size: 90%"><code class="shell" >$ docker inspect alpine/helm | jq -c ".[0].Config.Entrypoint"
+["helm"]
+
+$ docker inspect alpine/helm | jq -c ".[0].Config.Cmd"
+["--help"]
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Какую команду выполнит Docker?</h2>
+    <h3>docker run --entrypoint=COMMAND IMAGE [ARG...]</h3>
+    <p>Выполнится команда <code>COMMAND ARG...</code> с учетом поиска в <code>PATH</code></p>
+    <pre><code class="shell">$ # /bin/sh -c whoami
+$ docker run --entrypoint=/bin/sh alpine/helm -c whoami
+root
+
+$ docker run --entrypoint=/bin/ps alpine/helm
+PID   USER     TIME  COMMAND
+    1 root      0:00 /bin/ps
+
+$ docker run --entrypoint=ps alpine/helm
+PID   USER     TIME  COMMAND
+    1 root      0:00 /bin/ps
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Какую команду выполнит Docker?</h2>
+    <h3>docker run --entrypoint="" IMAGE COMMAND [ARG...]</h3>
+    <p>Выполнится команда <code>COMMAND ARG...</code> с учетом поиска в <code>PATH</code></p>
+    <pre><code class="shell">$ docker run --entrypoint="" alpine/helm whoami
+root
+
+$ docker run --entrypoint="" alpine/helm /bin/ps
+PID   USER     TIME  COMMAND
+    1 root      0:00 /bin/ps
+
+$ docker run --entrypoint="" alpine/helm ps
+PID   USER     TIME  COMMAND
+    1 root      0:00 /bin/ps
+</code></pre>
 </section>
 
 <section class="slide">
@@ -323,7 +400,7 @@ LABEL version="1.0"
     <p>Посмотреть метаданные контейнера/образа можно командой вида:</p>
     <pre><code class="shell">$ docker build -t test .
 
-$ docker inspect test | jq ".[0].ContainerConfig.Labels"
+$ docker inspect test | jq ".[0].Config.Labels"
 {
   "com.example.label-with-value": "foo",
   "com.example.vendor": "ACME Incorporated",
