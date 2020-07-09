@@ -520,9 +520,34 @@ $ docker rm ${id}
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>кратко про слои</mark>
-    </h2>
+    <h2>Пример Dockerfile</h2>
+    <pre style="font-size: 80%"><code class="Dockerfile"># Use the official image as a parent image.
+FROM node:current-slim
+# Set the working directory.
+WORKDIR /usr/src/app
+# Copy the file from your host to your current location.
+COPY package.json .
+# Run the command inside your image filesystem.
+RUN npm install
+# Inform Docker that the container is listening on the specified
+# port at runtime.
+EXPOSE 8080
+# Run the specified command within the container.
+CMD [ "npm", "start" ]
+# Copy the rest of your app's source code from your host to your
+# image filesystem.
+COPY . .</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Docker хранит образ слоями</h2>
+    <p>При каждом изменении внутренней файловой системы во время сборки контейнера будет создаваться новый слой (LAYER).</p>
+    <p>Слой содержит внутри изменения файловой системы:</p>
+    <img src="docker-ogres.jpg" style="float: right; width: 50%"/>
+    <ul>
+        <li>Новое содержимое изменённых файлов;</li>
+        <li>Отметки об удалении старых файлов.</li>
+    </ul>
 </section>
 
 <section class="slide">
