@@ -33,11 +33,20 @@ description: Docker for backend devs
 
 <section class="slide">
     <h2>Какие проблемы он решает?</h2>
-    <ul>
-        <li>Разворачивание приложений в production;</li>
-        <li>Окружение для сборки на CI;</li>
-        <li>Тестовое окружение.</li>
-    </ul>
+    <dl>
+        <dt>Разворачивание приложений в production</dt>
+        <dd>На одном хосте могут жить сервисы на разных библиотеках и дистрибутивах Linux. Например ElasitcSearch
+            базируется на CentOS, а другие сервисы базируются на Ubuntu.
+        </dd>
+
+        <dt>Окружение для сборки на CI</dt>
+        <dd>Все зависимости для сборки можно упаковать в контейнер и хранить вместе с кодом. Для установки нового ПО не
+            нужно обращаться к админам.
+        </dd>
+
+        <dt>Тестовое окружение</dt>
+        <dd>Можно скачать всё окружение в виде одного образа и запустить одной командой.</dd>
+    </dl>
 </section>
 
 <section class="slide">
@@ -541,25 +550,84 @@ COPY . .</code></pre>
 
 <section class="slide">
     <h2>Docker хранит образ слоями</h2>
-    <p>При каждом изменении внутренней файловой системы во время сборки контейнера будет создаваться новый слой (LAYER).</p>
+    <p>При каждом изменении внутренней файловой системы во время сборки контейнера будет создаваться новый слой
+        (LAYER).</p>
     <p>Слой содержит внутри изменения файловой системы:</p>
     <img src="docker-ogres.jpg" style="float: right; width: 50%"/>
     <ul>
         <li>Новое содержимое изменённых файлов;</li>
         <li>Отметки об удалении старых файлов.</li>
     </ul>
+    <div class="important next">
+        <p>Смена прав доступа равноценна полной перезаписи файла.</p>
+    </div>
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>сколько занимает контейнер?</mark>
-    </h2>
+    <h2>Сколько занимает Docker образ?</h2>
+    <h3>Рассмотрим на примере Dockerfile</h3>
+    <pre><code class="dockerfile">FROM ubuntu:18.04
+LABEL com.joom.retention.maxDays=-1
+ARG KUBE_VERSION=1.17.2
+RUN apt -y update && apt -y install curl nginx
+RUN curl -f -s -o /usr/local/bin/kubectl ... && \
+chmod +x /usr/local/bin/kubectl && \
+kubectl version --client
+ADD default /etc/nginx/sites-available/default
+ADD log-read.sh /opt/
+RUN chmod +x /opt/log-read.sh
+CMD ["/bin/bash", "-xc", "/opt/log-read.sh"]
+</code></pre>
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>apt update & apt install</mark>
-    </h2>
+    <h2>Сколько занимает Docker образ?</h2>
+    <pre><code class="shell">docker image ls test
+REPOSITORY  TAG     IMAGE ID      CREATED        SIZE
+test        latest  1c393d55d51c  4 minutes ago  206MB
+</code></pre>
+    <p>При этом в docker registry размер того же образа будет 86.81MB.</p>
+    <p>Это вызвано тем, что <code>docker image ls</code> и <code>docker save</code> не используют сжание слоёв. При этом
+        внутри Docker Registry слои хранятся пожатые gzip-ом.</p>
+    <p>Это имеет забавное следствие: слои сжимаются на этапе <code>docker push</code>, из-за этого заливка образов может
+        упираться в процессор, а не в сеть.</p>
+    <p>Так же важно заметить, что зачастую сумма размеров образов на равна общему размеру образов за счет
+        переиспользования слоёв.</p>
+</section>
+
+<section class="slide">
+    <h2>Нужно быть аккуратыми с RUN-командой</h2>
+    <p>При повторной сборке образов, Docker считает, что если не менялись входные данные, то можно использовать
+        результат предыдущей сборки. Это заметно ускоряет повторную сборку контейнера.</p>
+    <p>Но директива <code>RUN</code> не является "чистой функцией" и зависит от внешних факторов.</p>
+    <p>В результате после изменения Dockerfile может возникнуть ситуация, что <code>RUN</code> команды будут выполняться
+        в сильно разное время.</p>
+</section>
+
+<section class="slide">
+    <h2>Пример проблемы с RUN-командой</h2>
+    <h3>Было:</h3>
+    <pre><code class="dockerfile">RUN apt -y update
+RUN apt -y install curl nginx</code></pre>
+    <h3>Заменили на:</h3>
+    <pre><code class="dockerfile">RUN apt -y update
+RUN apt -y install curl nginx git</code></pre>
+    <h3>В итоге:</h3>
+    <pre><code class="dockerfile"># docker используент кэш недельной давности
+RUN apt -y update
+# docker пытается выполнить команду, но кэш apt не актуален
+RUN apt -y install curl nginx git</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Решение проблемы с RUN-командой</h2>
+    <h3>Заменить:</h3>
+    <pre><code class="dockerfile">RUN apt -y update
+RUN apt -y install curl nginx</code></pre>
+    <h3>На:</h3>
+    <pre><code class="dockerfile">RUN apt -y update && \
+    apt -y install curl nginx && \
+    rm -rf /var/lib/apt/lists/*</code></pre>
 </section>
 
 <section class="slide">
@@ -571,6 +639,12 @@ COPY . .</code></pre>
 <section class="slide">
     <h2>
         <mark>build cache</mark>
+    </h2>
+</section>
+
+<section class="slide">
+    <h2>
+        <mark>healthcheck</mark>
     </h2>
 </section>
 
@@ -594,6 +668,12 @@ COPY . .</code></pre>
 
 <section class="slide">
     <h2 class="shout">Best practics</h2>
+</section>
+
+<section class="slide">
+    <h2>
+        <mark>Не использовать latest</mark>
+    </h2>
 </section>
 
 <section class="slide">
