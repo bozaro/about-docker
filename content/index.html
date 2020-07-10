@@ -661,9 +661,17 @@ CMD ["./app"]
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>build cache</mark>
-    </h2>
+    <h2>Кэширование сборки</h2>
+    <pre><code class="shell">$ docker pull docker.joom.it/helm:latest
+$ docker build --cache-from=docker.joom.it/helm:latest .</code></pre>
+    <ul>
+        <li>Если указать <code>--cache-from</code>, то данный образ будет переиспользоваться при сборке. Локальный кэш
+            сборки при этом игнорируется.
+        </li>
+        <li>Если указано несколько <code>--cache-from</code>, то приоритет образов не определён.</li>
+        <li>Для multi-stage сборок надо отдельно указывать <code>--cache-from</code> для каждого промежуточного слоя.
+        </li>
+    </ul>
 </section>
 
 <section class="slide">
