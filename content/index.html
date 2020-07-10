@@ -717,9 +717,36 @@ $ docker inspect 027b1a3d2cd0 | jq ".[0].State.Health.Status"
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>build kit</mark>
-    </h2>
+    <h2>Сборка с BuildKit</h2>
+    <pre><code class="shell">$ DOCKER_BUILDKIT=1 docker build</code></pre>
+    <h3>Плюсы</h3>
+    <ul>
+        <li>Не копируется весь контекст в Docker Daemon (данные копируются лениво)</li>
+        <li>Добавлена опция <code>--secret</code></li>
+        <li>Более приятное отображение процесса сборки</li>
+    </ul>
+    <h3>Минусы</h3>
+    <ul>
+        <li>Фича экспериментальная и не опробованная</li>
+    </ul>
+    <p><a href="https://docs.docker.com/develop/develop-images/build_enhancements/">https://docs.docker.com/develop/develop-images/build_enhancements/</a></p>
+</section>
+
+<section class="slide">
+    <h2>Сборка с BuildKit</h2>
+    <pre><code class="shell">$ echo 'WARMACHINEROX' > mysecret.txt
+$ DOCKER_BUILDKIT=1 docker build --progress=plain \
+    --no-cache --secret id=mysecret,src=mysecret.txt .
+</code></pre>
+    <h3>Dockerfile</h3>
+    <pre style="font-size: 90%"><code class="dockerfile"># syntax = docker/dockerfile:1.0-experimental
+FROM alpine
+
+# shows secret from default secret location
+RUN --mount=type=secret,id=mysecret cat /run/secrets/mysecret
+
+# shows secret from custom secret location
+RUN --mount=type=secret,id=mysecret,dst=/foobar cat /foobar</code></pre>
 </section>
 
 <section class="slide">
