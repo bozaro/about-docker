@@ -1077,9 +1077,71 @@ nginx          RUNNING   pid 64, uptime 0:00:05
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>docker vs jenkins</mark>
-    </h2>
+    <h2>Docker vs Jenkins</h2>
+    <p>Docker поддерживает запуск сборки "внутри" Docker-контейнера из коробки:</p>
+    <ul>
+        <li>Можно указать имя Docker-образа</li>
+        <li>Можно собирать образ из Dockerfile</li>
+    </ul>
+    <p>Docker compose при этом не поддерживается.</p>
+</section>
+
+<section class="slide">
+    <h2>Jenkins: docker image</h2>
+    <pre style="font-size: 75%"><code>pipeline {
+  agent {
+    docker {
+      image "golang:1.13.9-alpine3.11"
+      args "--hostname ${env.JOB_NAME.replace('/', '-')}-${env.BUILD_NUMBER}"
+      customWorkspace "workspace/example"
+      label "onspot"
+    }
+  }
+  ...
+}
+
+
+</code></pre>
+    <ul>
+        <li>Быстрая инициализация рабочего окружения</li>
+        <li>Не очень удобно модифицировать тестовое окружение</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Jenkins: dockerfile</h2>
+    <pre style="font-size: 75%"><code>pipeline {
+  agent {
+    docker {
+      dir "jenkins"
+      filename "Dockerfile"
+      additionalBuildArgs "--pull"
+      args "--hostname ${env.JOB_NAME.replace('/', '-')}-${env.BUILD_NUMBER}"
+      customWorkspace "workspace/example"
+      label "onspot"
+    }
+  }
+  ...
+}
+</code></pre>
+    <ul>
+        <li>Долгая инициализация тестового окружения при первом старте</li>
+        <li>Тестовое окружение версионируется вместе с кодом</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Jenkins: общие особенности</h2>
+    <ul>
+        <li>Лишние образы не удаляются после сборки (утекает место).</li>
+        <li>Не поддерживается ENTRYPOINT и HEALTHCHECK: Jenkins agent начинает взаимодействие с контейнером не дожидаясь
+            завершения запуска севрисов внутри него.
+        </li>
+        <li>По-хорошем надо руками прокидывать <code>hostname</code>.</li>
+        <li>Сам Jenkins agent выполняется за пределами Docker-контейнера: взаимодействие с данными Docker-контейнера
+            идут через общую файловую систему, при чем пути должны совпадать.
+        </li>
+    </ul>
 </section>
 
 <section class="slide">
