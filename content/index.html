@@ -824,9 +824,46 @@ RUN --mount=type=secret,id=mysecret,dst=/foobar cat /foobar</code></pre>
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>porter</mark>
-    </h2>
+    <h2>Время сборки backend-а</h2>
+    <p>Статистика сборки (начало 2020):</p>
+    <pre><code class="text">Execution statistics:
+  docker push     <mark>20m7.591993776s</mark>
+  docker build    <mark>10m52.346187972s</mark>
+  shell command   4m51.205196455s
+  go build        <mark>3m36.109218439s</mark>
+  docker pull     19.589956997s
+  docker image rm 3.795116679s
+  file rm         1.217284781s
+  docker file     7.277674ms
+Build completed: 7m43.878900367s</code></pre>
+    <p>Отображается wall clock time при сборке в несколько потоков. Но всё равно сильно выделяется время на сборку
+        контейнеров.</p>
+</section>
+
+<section class="slide">
+    <h2>Время сборки backend-а</h2>
+    <h3>Время docker build</h3>
+    <p>Сборка каждого Dockerfile отправляет контекст сборки (в нашем случае туда входит только исполняемый файл) в
+        Docker Host.</p>
+    <p>Каждая комадна в Dockerfile провоцирет создаёт временный Docker-контейнер.</p>
+    <p>Есть ощущение, что параллельное выполнение <code>docker build</code> частично сериализуется где-то внутри Docker
+        Host.</p>
+    <h3>Время docker push</h3>
+    <p>Во время <code>docker push</code> львиную долю времени занимает сжатие образов GZip-ом.</p>
+</section>
+
+<section class="slide">
+    <h2>Альтернативные способы сборки</h2>
+    <h3><a href="https://github.com/GoogleContainerTools/kaniko">github.com/GoogleContainerTools/kaniko</a></h3>
+    <ul>
+        <li>Kaniko частично убирает сериализацию внутри Docker Host, так позволяет вынести сборку за его пределы</li>
+        <li>Kaniko проседает за счет времени на запуск Docker контейнеров</li>
+    </ul>
+    <h3><a href="https://github.com/joomcode/go-porter">github.com/joomcode/go-porter</a></h3>
+    <ul>
+        <li>Не использует эмуляцию файловой системы для сторонних процессов, за счет чего выполняет Dockerfile более эффективно</li>
+        <li>Не поддерживает команду <code>RUN</code> by design</li>
+    </ul>
 </section>
 
 <section class="slide">
