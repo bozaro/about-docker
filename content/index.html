@@ -861,7 +861,9 @@ Build completed: 7m43.878900367s</code></pre>
     </ul>
     <h3><a href="https://github.com/joomcode/go-porter">github.com/joomcode/go-porter</a></h3>
     <ul>
-        <li>Не использует эмуляцию файловой системы для сторонних процессов, за счет чего выполняет Dockerfile более эффективно</li>
+        <li>Не использует эмуляцию файловой системы для сторонних процессов, за счет чего выполняет Dockerfile более
+            эффективно
+        </li>
         <li>Не поддерживает команду <code>RUN</code> by design</li>
     </ul>
 </section>
@@ -1003,9 +1005,27 @@ org.opencontainers.image.source: https://github.com/joomcode/docker-images.git
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>несколько процессов в контейнере</mark>
-    </h2>
+    <h2>Запуск нескольких процессов</h2>
+    <p>Docker рассчитан на запуск одного процесса в контейнере.</p>
+    <p>Если приложение состоит из нескольких процессов, то есть следующие варианты:</p>
+    <ul>
+        <li>Разделить приложение на несколько контейнеров (Docker compose, Kubernetes)</li>
+        <li>Запустить несколько процессов в один контейнере</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Запуск нескольких процессов</h2>
+    <h3>Разделение на несколько контейнеров</h3>
+    <ul>
+        <li>Нужно какое-то конфигурирование для связывании контейнеров</li>
+        <li>Каждый контейнер будет иметь свои квоты на ресурсы</li>
+    </ul>
+    <h3>Запуск нескольких процессов в контейнере</h3>
+    <ul>
+        <li>Более простой запуск</li>
+        <li>Единый лимит по ресурсам на все процессы</li>
+    </ul>
 </section>
 
 <section class="slide">
@@ -1015,9 +1035,45 @@ org.opencontainers.image.source: https://github.com/joomcode/docker-images.git
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>supervisord</mark>
-    </h2>
+    <h2>Запуск нескольких процессов</h2>
+    <p>Для запуска нескольких процессов в контейнере можно воспользоваться <a
+            href="http://supervisord.org/">supervisord</a>.</p>
+    <h3>Dockerfile</h3>
+    <pre style="font-size: 65%"><code class="dockerfile">FROM ubuntu
+RUN apt-get update \
+  && apt-get install -y supervisor nginx \
+  && rm -rf /var/lib/apt/lists/*
+COPY nginx.conf /etc/supervisor/conf.d/
+CMD ["/usr/bin/supervisord", "--nodaemon"]
+</code></pre>
+    <h3>nginx.conf</h3>
+    <pre style="font-size: 65%"><code class="ini">[program:nginx]
+command=/usr/sbin/nginx -g 'daemon off;'
+stdout_logfile=/var/log/nginx-stdout.log
+stderr_logfile=/var/log/nginx-stderr.log
+autostart=true
+autorestart=true
+numprocs=1
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Запуск нескольких процессов</h2>
+    <pre><code class="shell">$ supervisorctl status
+nginx          RUNNING   pid 7, uptime 0:00:56
+
+$ supervisorctl stop nginx
+nginx: stopped
+
+$ supervisorctl status
+nginx          STOPPED   Jul 10 02:10 PM
+
+$ supervisorctl start nginx
+nginx: started
+
+$ supervisorctl status
+nginx          RUNNING   pid 64, uptime 0:00:05
+</code></pre>
 </section>
 
 <section class="slide">
