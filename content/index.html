@@ -834,9 +834,18 @@ RUN --mount=type=secret,id=mysecret,dst=/foobar cat /foobar</code></pre>
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>Не использовать latest</mark>
-    </h2>
+    <h2>Не используйте тэг в latest</h2>
+    <p>Нельзя использовать тэг <code>latest</code> при деплое в production.</p>
+    <p>Особенно если деплой в Kubernetes.</p>
+    <ul>
+        <li>Если вы выкатываете версию без принудительного <code>pull</code>, то может быть запущен образ, собранный
+            несколько <strike>месяцев</strike> дней назад.
+        </li>
+        <li>Если вы выкатываете версию с принудительным <code>pull</code>, то при переезде pod-а может быть запущен
+            образ, собранный через несколько дней после деплоя.
+        </li>
+        <li>При использовании latest-тега в CI теряется воспроизводимость сборки.</li>
+    </ul>
 </section>
 
 <section class="slide">
