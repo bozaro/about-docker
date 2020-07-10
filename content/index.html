@@ -711,9 +711,82 @@ $ docker inspect 027b1a3d2cd0 | jq ".[0].State.Health.Status"
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>сигналы (alpine/ubuntu/tini)</mark>
-    </h2>
+    <h2>В чем разница по поведению?</h2>
+    <h3>a/Dockerfile</h3>
+    <pre><code class="dockerfile">FROM ubuntu
+CMD /bin/sleep 600
+</code></pre>
+    <h3>b/Dockerfile</h3>
+    <pre><code class="dockerfile">FROM ubuntu
+CMD ["/bin/sleep", "600"]</code></pre>
+    <pre><code class="shell">$ docker build -t test .
+$ docker run --rm --name test test</code></pre>
+    <p>У контейнеров будет разная реакция на:</p>
+    <pre><code class="shell">$ sudo killall -SIGTERM sleep</code></pre>
+</section>
+
+<section class="slide">
+    <h2>В чем разница по поведению?</h2>
+    <h3>CMD /bin/sleep 600</h3>
+    <pre style="font-size: 90%"><code class="shell">$ docker exec test ps
+    PID TTY          TIME CMD
+      1 ?        00:00:00 sh
+      7 ?        00:00:00 sleep
+      8 ?        00:00:00 ps
+</code></pre>
+
+    <h3>CMD ["/bin/sleep", "600"]</h3>
+    <pre style="font-size: 90%"><code class="shell">$ docker exec test ps
+    PID TTY          TIME CMD
+      1 ?        00:00:00 sleep
+      6 ?        00:00:00 ps
+</code></pre>
+
+    <p>PID = 1 имеет достаточно специфическое поведение с точки зрения обработки сигналов.</p>
+</section>
+
+<section class="slide">
+    <h2>Встроенный init</h2>
+    <h3>docker run --init</h3>
+    <pre style="font-size: 90%"><code class="shell">$ docker exec test ps
+    PID TTY          TIME CMD
+      1 ?        00:00:00 docker-init
+      6 ?        00:00:00 sleep
+      7 ?        00:00:00 ps
+</code></pre>
+    <div class="important"><p>Флаг <code>--init</code> отсутсвует при запуске контейнеров в Kubernetes.</p></div>
+</section>
+
+<section class="slide">
+    <h2>Минималистичный init</h2>
+    <h3>tini (<a href="https://github.com/krallin/tini">https://github.com/krallin/tini</a>)</h3>
+    <pre style="font-size: 80%"><code class="dockerfile">FROM ubuntu
+ADD https://github.com/krallin/tini/releases/download/v0.19.0/tini /tini
+RUN chmod +x /tini
+ENTRYPOINT ["/tini", "--"]
+CMD ["/bin/sleep", "600"]
+</code></pre>
+    <br/>
+    <pre style="font-size: 90%"><code class="shell">$ docker exec test ps
+    PID TTY          TIME CMD
+      1 ?        00:00:00 tini
+      6 ?        00:00:00 sleep
+      7 ?        00:00:00 ps
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Ubuntu vs Alpine</h2>
+    <h3>ubuntu/Dockerfile</h3>
+    <pre><code class="dockerfile">FROM ubuntu
+CMD /bin/sleep 600
+</code></pre>
+    <p>Shell в Ubuntu прокидывает <code>SIGTERM</code> до дочернего процесса.</p>
+    <h3>alpine/Dockerfile</h3>
+    <pre><code class="dockerfile">FROM alpine
+CMD /bin/sleep 600
+</code></pre>
+    <p>Shell в Alpine не прокидывает <code>SIGTERM</code> до дочернего процесса.</p>
 </section>
 
 <section class="slide">
@@ -729,7 +802,8 @@ $ docker inspect 027b1a3d2cd0 | jq ".[0].State.Health.Status"
     <ul>
         <li>Фича экспериментальная и не опробованная</li>
     </ul>
-    <p><a href="https://docs.docker.com/develop/develop-images/build_enhancements/">https://docs.docker.com/develop/develop-images/build_enhancements/</a></p>
+    <p><a href="https://docs.docker.com/develop/develop-images/build_enhancements/">https://docs.docker.com/develop/develop-images/build_enhancements/</a>
+    </p>
 </section>
 
 <section class="slide">
