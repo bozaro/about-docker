@@ -741,9 +741,37 @@ org.opencontainers.image.source: https://github.com/joomcode/docker-images.git
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>чистка контейнеров</mark>
-    </h2>
+    <h2>Garbage collection</h2>
+    <p>У нас в docker registry реализован механизм чистки более ненужных образов.</p>
+    <p>Ответственность за чистку образов возлагается на команды, которые эти образы используют.</p>
+    <ul>
+        <li>Каждая команда использует свой отдельный docker registry</li>
+        <li>Управление чисткой образов осуществляется через LABEL-ы</li>
+    </ul>
+    <p>Пост в Notion: <a
+            href="https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8#fac68627b9db4816b4d36cb36695ec3d">https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8#fac68627b9db4816b4d36cb36695ec3d</a>
+    </p>
+</section>
+
+<section class="slide">
+    <h2>Garbage collection</h2>
+    <h3>Используемые при чистке репозиторием LABEL-ы:</h3>
+    <dl>
+        <dt>com.joom.retention.maxDays=3</dt>
+        <dd>Количество дней, после которых можно удалить docker-образ</dd>
+
+        <dt>com.joom.retention.maxCount=10</dt>
+        <dd>Количество образов, которые достаточно хранить</dd>
+
+        <dt>com.joom.retention.maxCountGroup=master</dt>
+        <dd>Группа, в которой удаляются образы по превышении количества</dd>
+
+        <dt>com.joom.retention.deployGroup=backend-master-123456</dt>
+        <dd>Объединение образов с одну группу (группа удаляется целиком)</dd>
+
+        <dt>com.joom.retention.pullProtectDays=90</dt>
+        <dd>Количество дней, которые образ будет сохраняться с момента последнего скачивания</dd>
+    </dl>
 </section>
 
 <section class="slide">
