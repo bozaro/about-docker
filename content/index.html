@@ -849,9 +849,15 @@ RUN --mount=type=secret,id=mysecret,dst=/foobar cat /foobar</code></pre>
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>Не собирайте контейнеры руками</mark>
-    </h2>
+    <h2>Не собирайте контейнеры руками</h2>
+    <p>Никогда не заливайте контейнеры, собранные локально в Docker Registry.</p>
+    <p>Все контейнеры для Docker Registry должны собраться через CI:</p>
+    <ul>
+        <li>У коллег не должно возникать вопросов о происхождении образа</li>
+        <li>Надо регулярно проверять собираемость образов из-за различных внешних зависимостей</li>
+    </ul>
+    <p>У нас есть инфраструктура для сборки простых образов в репозитории: <a
+            href="https://github.com/joomcode/docker-images">github.com/joomcode/docker-images</a></p>
 </section>
 
 <section class="slide">
