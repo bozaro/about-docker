@@ -675,9 +675,39 @@ $ docker build --cache-from=docker.joom.it/helm:latest .</code></pre>
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>healthcheck</mark>
-    </h2>
+    <h2>HEALTHCHECK</h2>
+    <h3>Dockerfile</h3>
+    <pre><code class="dockerfile">FROM nginx:1.17.7
+RUN apt-get update && apt-get install -y curl
+HEALTHCHECK \
+    --interval=5s \
+    --timeout=1s \
+    --retries=3 CMD curl --head http://localhost/
+</code></pre>
+    <pre style="font-size: 60%"><code class="shell">$ docker build -q -t test . && docker run --rm -it test
+sha256:d2064caeda2e5c32d0d39a17c9b2d71e27dbdd6d93b2d6f2361802ea60235d34
+127.0.0.1 - - [10/Jul/2020:10:54:45 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+127.0.0.1 - - [10/Jul/2020:10:54:50 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+127.0.0.1 - - [10/Jul/2020:10:54:55 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+127.0.0.1 - - [10/Jul/2020:10:55:00 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+127.0.0.1 - - [10/Jul/2020:10:55:05 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+</code> </pre>
+</section>
+
+<section class="slide">
+    <h2>HEALTHCHECK</h2>
+    <h3>Статус контейнера</h3>
+    <pre style="font-size: 55%"><code class="shell">$ docker ps
+CONTAINER ID  IMAGE  COMMAND                 CREATED        STATUS
+027b1a3d2cd0  test   "nginx -g 'daemon of…"  1 second ago   Up Less than a second (health: starting)
+
+$ docker ps
+CONTAINER ID  IMAGE  COMMAND                 CREATED        STATUS
+027b1a3d2cd0  test   "nginx -g 'daemon of…"  9 seconds ago  Up 8 seconds (healthy)
+
+$ docker inspect 027b1a3d2cd0 | jq ".[0].State.Health.Status"
+"healthy"
+</code> </pre>
 </section>
 
 <section class="slide">
