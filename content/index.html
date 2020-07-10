@@ -1029,9 +1029,43 @@ org.opencontainers.image.source: https://github.com/joomcode/docker-images.git
 </section>
 
 <section class="slide">
-    <h2>
-        <mark>docker compose</mark>
-    </h2>
+    <h2>Docker compose</h2>
+    <h3>docker-compose.yml</h3>
+    <pre style="font-size: 80%"><code class="yaml">version: "3.8"
+services:
+  server:
+    build: server/
+    ports:
+     - 8080:80
+  client:
+    build: client/
+    command: python ./client.py
+    environment:
+     - SERVER=server:80
+    depends_on:
+     - server
+</code></pre>
+    <pre><code class="shell">$ docker-compose build && docker-compose up</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Docker compose</h2>
+    <ul>
+        <li>Позволяет запустить несколько контейнеров</li>
+        <li>Каждый контейнер по-умолчанию запущен с изолированной сетью и видит соседей по имени сервиса (например:
+            <code>http://server:80</code>)
+        </li>
+        <li>Директива <code>ports</code> прокидывает порты на хост-машину</li>
+        <li>При интерптерации <code>docker-compose.yml</code> в строках вида <code>${FOO}</code> и <code>$FOO</code>
+            подставляются переменные окружения
+        </li>
+        <li>Значения по-умолчанию для переменных берутся из файла <code>.env</code></li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Docker compose</h2>
+    <pre><code class="shell"></code></pre>
 </section>
 
 <section class="slide">
