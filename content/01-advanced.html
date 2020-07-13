@@ -1,598 +1,51 @@
 ---
-title: Немного о Docker
-description: Docker for backend devs
----
-<section class="slide">
-    <h2>Docker</h2>
-    <img src="docker.svg" style="position: absolute; bottom: 50px; right: 50px; width: 320px"/>
+title: Подробнее о Docker
+description: |
     <ul>
-        <li>Что такое Docker и какие проблемы он решает?</li>
-        <li>Азы использования</li>
-        <li>Особенности сборки контейнеров</li>
-        <li>Best practics</li>
-    </ul>
-</section>
-
-<section class="slide">
-    <h2 class="shout">Основы Docker</h2>
-</section>
-
-<section class="slide">
-    <h2>Что такое Docker?</h2>
-    <figure>
-        <dl>
-            <dt>Docker</dt>
-            <dd>Программное обеспечение для автоматизации развёртывания и управления приложениями в средах с
-                поддержкой контейнеризации. Позволяет «упаковать» приложение со всем его окружением и зависимостями в
-                контейнер.
-            </dd>
-        </dl>
-        <figcaption><a href="https://ru.wikipedia.org/wiki/Docker">https://ru.wikipedia.org/wiki/Docker</a></figcaption>
-    </figure>
-</section>
-
-<section class="slide">
-    <h2>Какие проблемы он решает?</h2>
-    <dl>
-        <dt>Разворачивание приложений в production</dt>
-        <dd>На одном хосте могут жить сервисы на разных библиотеках и дистрибутивах Linux. Например ElasitcSearch
-            базируется на CentOS, а другие сервисы базируются на Ubuntu.
-        </dd>
-
-        <dt>Окружение для сборки на CI</dt>
-        <dd>Все зависимости для сборки можно упаковать в контейнер и хранить вместе с кодом. Для установки нового ПО не
-            нужно обращаться к админам.
-        </dd>
-
-        <dt>Тестовое окружение</dt>
-        <dd>Можно скачать всё окружение в виде одного образа и запустить одной командой.</dd>
-    </dl>
-</section>
-
-<section class="slide">
-    <h2>Контейнеры VS Виртуальные машины</h2>
-    <dl>
-        <dt>Контейнеризация</dt>
-        <dd>Метод виртуализации, при котором ядро операционной системы поддерживает несколько изолированных экземпляров
-            пространства пользователя вместо одного.
-        </dd>
-        <dt>Виртуальная машина</dt>
-        <dd>Это окружение, которое представляется для «гостевой» операционной системы, как аппаратное. Однако на самом
-            деле это программное окружение, которое эмулируется программным обеспечением хостовой системы.
-        </dd>
-    </dl>
-</section>
-
-<section class="slide">
-    <h2>Контейнеры</h2>
-    <h3>Плюсы</h3>
-    <ul>
-        <li>Минимальные накладные расходы</li>
-        <li>Общее управление ресурсами (память, кэши)</li>
-    </ul>
-    <h3>Минусы</h3>
-    <ul>
-        <li>Возможна толька в рамках одной ОС</li>
-        <li>Часть параметров не контролируются (наример: <code>/proc/sys/kernel/core_pattern</code>)</li>
-    </ul>
-</section>
-
-<section class="slide">
-    <h2>Виртуальные машины</h2>
-    <h3>Плюсы</h3>
-    <ul>
-        <li>Более изолированная виртуализация</li>
-        <li>Можно запустить другую операционную систему</li>
-        <li>Достаточно эффективна в рамках одной архитектуры</li>
-    </ul>
-    <h3>Минусы</h3>
-    <ul>
-        <li>Виртуальная машина потребляет фиксированное количество памяти</li>
-        <li>Раздельные кэши между гипервизором и виртуальной машиной</li>
-    </ul>
-</section>
-
-<section class="slide">
-    <h2>Linux vs MacOS vs Windows</h2>
-    <h3>Linux</h3>
-    <p>Docker использует встроенную поддержку контейнеров.</p>
-    <div class="next">
-        <h3>MacOS, Windows</h3>
-        <p>Docker Server запускается под Linux внутри виртуальной машины.</p>
-        <div class="next important">
-            <p>Виртуальная машина с Docker Server:</p>
+        <li>Сборка контейнеров
             <ul>
-                <li>занимает фиксированное количество оперативной памяти;</li>
-                <li>хранит служебную информацию на виртуальном диске, который только увеличивается.</li>
-            </ul>
-        </div>
-    </div>
-</section>
-
-<section class="slide">
-    <h2>Настройка памяти в MacOS</h2>
-    <img src="docker-memory.png" style="height: 72%"/>
-</section>
-
-<section class="slide">
-    <h2>Что занимает место на диске?</h2>
-    <ol>
-        <li>Образы (images)</li>
-        <li>Контейнеры (containers):
-            <ul>
-                <li>изменённые файлы</li>
-                <li>логи</li>
+                <li>Ловушки RUN-команды</li>
+                <li>Multi-stage builds</li>
+                <li>Health check</li>
+                <li>Сигналы</li>
+                <li>Варианты сборки контейнеров</li>
             </ul>
         </li>
-        <li>Разделы (volumes)</li>
-        <li>Кэш сборки</li>
-    </ol>
-</section>
-
-<section class="slide">
-    <h2>Что занимает место на диске?</h2>
-    <pre><code class="shell">$ docker system df
-TYPE           TOTAL  ACTIVE  SIZE     RECLAIMABLE
-Images         46     3       18.59GB  17.33GB (93%)
-Containers     3      2       1.169GB  2.198kB (0%)
-Local Volumes  1      1       1.049GB  0B (0%)
-Build Cache    6      0       0B       0B
-        </code></pre>
-</section>
-
-<section class="slide">
-    <h2>Удаление всего лишнего</h2>
-    <pre><code class="shell">$ docker system prune
-WARNING! This will remove:
-  - all stopped containers
-  - all networks not used by at least one container
-  - all dangling images
-  - all dangling build cache
-
-Are you sure you want to continue? [y/N]
-        </code></pre>
-</section>
-
-<section class="slide">
-    <h2>Более точечная чистка</h2>
-    <h3>Контейнеры</h3>
-    <pre><code class="shell">$ docker container ls -a
-$ docker container ps -a
-$ docker container prune
-        </code></pre>
-    <h3>Образы</h3>
-    <pre><code class="shell">$ docker image ls
-$ docker images
-$ docker image prune
-        </code></pre>
-</section>
-
-<section class="slide">
-    <h2>Пример запуска Docker-образа</h2>
-    <pre><code class="shell">$ docker run --rm -it alpine:latest sh
-# ls
-bin    home   mnt    root   srv    usr
-dev    lib    opt    run    sys    var
-etc    media  proc   sbin   tmp
-# exit
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Взаимодействие с контейнером</h2>
-    <ul>
-        <li>переменные окружения</li>
-        <li>сетевое взаимодействие</li>
-        <li>общая файловая система</li>
+        <li>Best practics
+            <ul>
+                <li>Чистка образов в Docker Registry</li>
+                <li>Запуск нескольких процессов контейнере</li>
+                <li>Docker vs Jenkins</li>
+            </ul>
+        </li>
     </ul>
-</section>
+---
 
 <section class="slide">
-    <h2>Передача переменных окружения</h2>
-    <pre><code class="shell">$ docker run --rm \
-    --hostname=foobar \
-    --env FOO=bar \
-    --env BAR=baz \
-    alpine:latest \
-    env
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin
-HOSTNAME=foobar
-FOO=bar
-BAR=baz
-HOME=/root
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Сетевое взаимодействие</h2>
-    <h3>Сеть Docker Server-а</h3>
-    <pre><code class="shell">$ docker run --rm -it --net host nginx
-
-$ docker run --rm -it --net host ubuntu hostname -I
-172.16.1.150 172.17.0.1
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Сетевое взаимодействие</h2>
-    <h3>Изолированная сеть</h3>
-    <pre><code class="shell">$ docker run --rm -it \
-    --publish 8080:80 \
-    --publish :8081:80/tcp \
-    --publish 127.0.0.1:8082:80/tcp \
-    nginx
-
-$ docker run --rm -it ubuntu hostname -I
-172.17.0.3
-</code></pre>
-    <div class="important">
-        <p>Если порт занят, то под MacOS контейнер запустится, но трафик пойдет в локальный сервис, а не в
-            контейнер.</p>
-    </div>
-</section>
-
-<section class="slide">
-    <h2>Общая файловая система</h2>
-    <pre><code class="shell">$ docker run --rm --volume $(pwd):/workspace:ro \
-    alpine \
-    ls /workspace
-Jenkinsfile
-config.yaml
-content
-hugo.sh
-public
-resources
-start.sh
-static
-themes
-    </code> </pre>
-</section>
-
-<section class="slide">
-    <h2>Аккуратнее с правами доступа</h2>
-    <pre><code class="shell">$ docker run --rm ubuntu:latest id
-uid=0(root) gid=0(root) groups=0(root)
-
-$ docker run --rm --user 1000:100 ubuntu:latest id
-uid=1000 gid=100(users) groups=100(users)
-
-$ docker run --rm bitnami/elasticsearch:latest id
-uid=1001 gid=0(root) groups=0(root)
-</code></pre>
-    <div class="important">
-        <p>Контейнер пишет с теми правами, от которых запущен его процесс.</p>
-    </div>
-</section>
-
-<section class="slide">
-    <h2>Права на docker это почти sudo</h2>
-    <pre><code class="shell">$ id
-uid=1000(bozaro) gid=1000(bozaro)
-
-$ docker run --rm --volume $(pwd):/workspace alpine \
-    touch /workspace/file.txt
-
-$ ls -al file.txt
--rw-r--r-- 1 root root 0 июл  9 14:33 file.txt
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Docker volumes</h2>
-    <pre><code class="shell" style="font-size: 85%">$ vid=$(docker volume create)
-
-$ echo ${vid}
-f122409a44bd69485a02f1887b76fbc37936cd8bc387443194a1c9903057d448
-
-$ docker run --rm --volume ${vid}:/workspace alpine \
-    ls /workspace
-
-$ docker run --rm --volume ${vid}:/workspace alpine \
-    touch /workspace/file.txt
-
-$ docker run --rm --volume ${vid}:/workspace alpine \
-    ls /workspace
-file.txt
-
-$ docker volume rm ${vid}
-f122409a44bd69485a02f1887b76fbc37936cd8bc387443194a1c9903057d448
-    </code></pre>
-</section>
-
-
-<section class="slide">
-    <h2>Docker volumes</h2>
-    <p>Создание VOLUME может быть прописано в метаданных Docker-образа, например:</p>
-    <p>
-    <pre><code class="dockerfile">FROM ubuntu:18.04
-VOLUME /workspace
-</code></pre>
-    </p>
-    <p>Обычно, такие VOLUME удаляются при удалении контейнера. Но иногда этого не происходит и они "подвисают".</p>
-</section>
-
-<section class="slide">
-    <h2>Какую команду выполнит Docker?</h2>
-    <h3>docker run IMAGE [COMMAND] [ARG...]</h3>
-    <pre><code class="shell">$ docker run alpine/helm version
-<div class="next">version.BuildInfo{Version:"v3.2.4", GitCommit:...
-
-$ # helm version
-
-</div><div class="next">$ docker run alpine/helm
-</div><div class="next">The Kubernetes package manager
-
-Common actions for Helm:
-
-- helm search:    search for charts
-...
-$ # helm --help
-</div></code></pre>
-</section>
-
-<section class="slide">
-    <h2>Какую команду выполнит Docker?</h2>
-    <p>Если <code>COMMAND ARG...</code> не указан, то он считается равным <code>Cmd</code>.</p>
-    <p>Выполяется команда, полученная конкатенацией <code>Entrypoint</code> и <code>COMMAND ARG...</code>.</p>
-    <table class="striped">
-        <thead>
-        <tr>
-            <th>image</th>
-            <th>Entrypoint</th>
-            <th>Cmd
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <td>alpine</td>
-            <td>
-                <pre><code class="json">null</code></pre>
-            </td>
-            <td>
-                <pre><code class="json">["/bin/sh"]</code></pre>
-            </td>
-        </tr>
-        <tr>
-            <td>alpine/helm</td>
-            <td>
-                <pre><code class="json">["helm"]</code></pre>
-            </td>
-            <td>
-                <pre><code class="json">["--help"]</code></pre>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-    <pre style="font-size: 90%"><code class="shell">$ docker inspect alpine/helm | jq -c ".[0].Config.Entrypoint"
-["helm"]
-
-$ docker inspect alpine/helm | jq -c ".[0].Config.Cmd"
-["--help"]
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Какую команду выполнит Docker?</h2>
-    <h3>docker run --entrypoint=COMMAND IMAGE [ARG...]</h3>
-    <p>Выполнится команда <code>COMMAND ARG...</code> с учетом поиска в <code>PATH</code></p>
-    <pre><code class="shell">$ # /bin/sh -c whoami
-$ docker run --entrypoint=/bin/sh alpine/helm -c whoami
-root
-
-$ docker run --entrypoint=/bin/ps alpine/helm
-PID   USER     TIME  COMMAND
-    1 root      0:00 /bin/ps
-
-$ docker run --entrypoint=ps alpine/helm
-PID   USER     TIME  COMMAND
-    1 root      0:00 /bin/ps
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Какую команду выполнит Docker?</h2>
-    <h3>docker run --entrypoint="" IMAGE COMMAND [ARG...]</h3>
-    <p>Выполнится команда <code>COMMAND ARG...</code> с учетом поиска в <code>PATH</code></p>
-    <pre><code class="shell">$ docker run --entrypoint="" alpine/helm whoami
-root
-
-$ docker run --entrypoint="" alpine/helm /bin/ps
-PID   USER     TIME  COMMAND
-    1 root      0:00 /bin/ps
-
-$ docker run --entrypoint="" alpine/helm ps
-PID   USER     TIME  COMMAND
-    1 root      0:00 /bin/ps
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Метки Docker-образа</h2>
-    <p>Контейнер может содержать метки (LABEL).</p>
-    <p>Пример Dockerfile:</p>
-    <pre><code class="dockerfile">FROM ubuntu:18.04
-LABEL "com.example.vendor"="ACME Incorporated"
-LABEL com.example.label-with-value="foo"
-LABEL version="1.0"
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Метки Docker-образа</h2>
-    <p>Посмотреть метаданные контейнера/образа можно командой вида:</p>
-    <pre><code class="shell">$ docker build -t test .
-
-$ docker inspect test | jq ".[0].Config.Labels"
-{
-  "com.example.label-with-value": "foo",
-  "com.example.vendor": "ACME Incorporated",
-  "version": "1.0"
-}
-</code></pre>
-    </p>
-</section>
-
-<section class="slide">
-    <h2>Метки Docker-образа</h2>
-    <img src="jfrog.png" style="position: absolute; bottom: 50px; right: 50px; width: 50%"/>
-    <p>Или через UI от Docker Registry</p>
-    <dl>
-        <dt>jfrog.joom.it/docker-images/mongos:latest</dt>
-        <dd><a href="https://jfrog.joom.it/ui/repos/tree/Properties/docker-images%2Fmongos%2Flatest%2Fmanifest.json">https://jfrog.joom.it/ui/repos/tree/Properties/docker-images%2Fmongos%2Flatest%2Fmanifest.json</a>
-        </dd>
-    </dl>
-
-</section>
-
-<section class="slide">
-    <h2>Docker сохраняет stdout и stderr</h2>
-    <pre><code class="shell">$ id=$(docker run --detach docker/whalesay cowsay boo)
-
-$ sleep 5
-
-$ docker inspect ${id} | jq ".[0].State.Status"
-"exited"
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Docker сохраняет stdout и stderr</h2>
-    <pre><code class="shell">$ docker logs ${id}
-<div style="font-size: 75%"> _____
-< boo >
- -----
-    \
-     \
-      \
-                    ##        .
-              ## ## ##       ==
-           ## ## ## ##      ===
-       /""""""""""""""""___/ ===
-  ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~
-       \______ o          __/
-        \    \        __/
-          \____\______/
-</div>
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Docker сохраняет stdout и stderr</h2>
-    <pre><code class="shell">$ docker logs --timestamps ${id}
-<div style="font-size: 75%">2020-07-09T12:35:19.788330077Z  _____
-2020-07-09T12:35:19.788348669Z < boo >
-2020-07-09T12:35:19.788354027Z  -----
-2020-07-09T12:35:19.788356697Z     \
-2020-07-09T12:35:19.788358973Z      \
-2020-07-09T12:35:19.788361128Z       \
-2020-07-09T12:35:19.788363290Z                     ##        .
-2020-07-09T12:35:19.788365599Z               ## ## ##       ==
-2020-07-09T12:35:19.788367782Z            ## ## ## ##      ===
-2020-07-09T12:35:19.788369934Z        /""""""""""""""""___/ ===
-2020-07-09T12:35:19.788372305Z   ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~
-2020-07-09T12:35:19.788374442Z        \______ o          __/
-2020-07-09T12:35:19.788376591Z         \    \        __/
-2020-07-09T12:35:19.788378853Z           \____\______/
-</div>
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Docker сохраняет stdout и stderr</h2>
-    <pre><code class="shell">$ sudo cat /var/lib/docker/containers/${id}/${id}-json.log
-<div style="font-size: 45%">{"log":" _____ \n","stream":"stdout","time":"2020-07-09T12:35:19.788330077Z"}
-{"log":"\u003c boo \u003e\n","stream":"stdout","time":"2020-07-09T12:35:19.788348669Z"}
-{"log":" ----- \n","stream":"stdout","time":"2020-07-09T12:35:19.788354027Z"}
-{"log":"    \\\n","stream":"stdout","time":"2020-07-09T12:35:19.788356697Z"}
-{"log":"     \\\n","stream":"stdout","time":"2020-07-09T12:35:19.788358973Z"}
-{"log":"      \\     \n","stream":"stdout","time":"2020-07-09T12:35:19.788361128Z"}
-{"log":"                    ##        .            \n","stream":"stdout","time":"2020-07-09T12:35:19.78836329Z"}
-{"log":"              ## ## ##       ==            \n","stream":"stdout","time":"2020-07-09T12:35:19.788365599Z"}
-{"log":"           ## ## ## ##      ===            \n","stream":"stdout","time":"2020-07-09T12:35:19.788367782Z"}
-{"log":"       /\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"___/ ===        \n","stream":"stdout","time":"2020-07-09T12:35:19.788369934Z"}
-{"log":"  ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~   \n","stream":"stdout","time":"2020-07-09T12:35:19.788372305Z"}
-{"log":"       \\______ o          __/            \n","stream":"stdout","time":"2020-07-09T12:35:19.788374442Z"}
-{"log":"        \\    \\        __/             \n","stream":"stdout","time":"2020-07-09T12:35:19.788376591Z"}
-{"log":"          \\____\\______/   \n","stream":"stdout","time":"2020-07-09T12:35:19.788378853Z"}
-</div>
-$ docker rm ${id}
-</code></pre>
-    <div class="important"><p>По-умолчанию Docker не ротирует логи.</p>
-        <p>Из-за этого логи могут занять всё доступное место на диске Docker
-            <nobr>Server-а.</nobr>
-        </p>
-    </div>
+    <h2>Подробнее о Docker</h2>
+    <img src="../docker.svg" style="position: absolute; bottom: 50px; right: 50px; width: 320px"/>
+    <ul>
+            <li>Сборка контейнеров
+                <ul>
+                    <li>Ловушки RUN-команды</li>
+                    <li>Multi-stage builds</li>
+                    <li>Health check</li>
+                    <li>Сигналы</li>
+                    <li>Варианты сборки контейнеров</li>
+                </ul>
+            </li>
+        <li>Best practics
+            <ul>
+                <li>Чистка образов в Docker Registry</li>
+                <li>Запуск нескольких процессов контейнере</li>
+                <li>Docker vs Jenkins</li>
+            </ul>
+        </li>
+    </ul>
 </section>
 
 <section class="slide">
     <h2 class="shout">Сборка контейнеров</h2>
-</section>
-
-<section class="slide">
-    <h2>Пример Dockerfile</h2>
-    <pre style="font-size: 80%"><code class="Dockerfile"># Use the official image as a parent image.
-FROM node:current-slim
-# Set the working directory.
-WORKDIR /usr/src/app
-# Copy the file from your host to your current location.
-COPY package.json .
-# Run the command inside your image filesystem.
-RUN npm install
-# Inform Docker that the container is listening on the specified
-# port at runtime.
-EXPOSE 8080
-# Run the specified command within the container.
-CMD [ "npm", "start" ]
-# Copy the rest of your app's source code from your host to your
-# image filesystem.
-COPY . .</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Docker хранит образ слоями</h2>
-    <p>При каждом изменении внутренней файловой системы во время сборки контейнера будет создаваться новый слой
-        (LAYER).</p>
-    <p>Слой содержит внутри изменения файловой системы:</p>
-    <img src="docker-ogres.jpg" style="float: right; width: 50%"/>
-    <ul>
-        <li>Новое содержимое изменённых файлов;</li>
-        <li>Отметки об удалении старых файлов.</li>
-    </ul>
-    <div class="important next">
-        <p>Смена прав доступа равноценна полной перезаписи файла.</p>
-    </div>
-</section>
-
-<section class="slide">
-    <h2>Сколько занимает Docker образ?</h2>
-    <h3>Рассмотрим на примере Dockerfile</h3>
-    <pre><code class="dockerfile">FROM ubuntu:18.04
-LABEL com.joom.retention.maxDays=-1
-ARG KUBE_VERSION=1.17.2
-RUN apt -y update && apt -y install curl nginx
-RUN curl -f -s -o /usr/local/bin/kubectl ... && \
-chmod +x /usr/local/bin/kubectl && \
-kubectl version --client
-ADD default /etc/nginx/sites-available/default
-ADD log-read.sh /opt/
-RUN chmod +x /opt/log-read.sh
-CMD ["/bin/bash", "-xc", "/opt/log-read.sh"]
-</code></pre>
-</section>
-
-<section class="slide">
-    <h2>Сколько занимает Docker образ?</h2>
-    <pre><code class="shell">docker image ls test
-REPOSITORY  TAG     IMAGE ID      CREATED        SIZE
-test        latest  1c393d55d51c  4 minutes ago  206MB
-</code></pre>
-    <p>При этом в docker registry размер того же образа будет 86.81MB.</p>
-    <p>Это вызвано тем, что <code>docker image ls</code> и <code>docker save</code> не используют сжание слоёв. При этом
-        внутри Docker Registry слои хранятся пожатые gzip-ом.</p>
-    <p>Это имеет забавное следствие: слои сжимаются на этапе <code>docker push</code>, из-за этого заливка образов может
-        упираться в процессор, а не в сеть.</p>
-    <p>Так же важно заметить, что зачастую сумма размеров образов на равна общему размеру образов за счет
-        переиспользования слоёв.</p>
 </section>
 
 <section class="slide">
@@ -896,7 +349,7 @@ Build completed: 7m43.878900367s</code></pre>
         <li>Надо регулярно проверять собираемость образов из-за различных внешних зависимостей</li>
     </ul>
     <p>У нас есть инфраструктура для сборки простых образов в репозитории: <a
-            href="https://github.com/joomcode/docker-images">github.com/joomcode/docker-images</a></p>
+                href="https://github.com/joomcode/docker-images">github.com/joomcode/docker-images</a></p>
 </section>
 
 <section class="slide">
@@ -1066,7 +519,7 @@ services:
 <section class="slide">
     <h2>Запуск нескольких процессов</h2>
     <p>Для запуска нескольких процессов в контейнере можно воспользоваться <a
-            href="http://supervisord.org/">supervisord</a>.</p>
+                href="http://supervisord.org/">supervisord</a>.</p>
     <h3>Dockerfile</h3>
     <pre style="font-size: 65%"><code class="dockerfile">FROM ubuntu
 RUN apt-get update \
@@ -1189,7 +642,7 @@ nginx          RUNNING   pid 64, uptime 0:00:05
             <a href="https://www.notion.so/joomteam/Docker-image-style-guide-6f9e2542f3e24a69b6d21bfa1bbd9761">https://www.notion.so/joomteam/Docker-image-style-guide-6f9e2542f3e24a69b6d21bfa1bbd9761</a>
         </li>
         <li>Чистка контейнеров<br/><a
-                href="https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8">https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8</a>
+                    href="https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8">https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8</a>
         </li>
     </ul>
 </section>
