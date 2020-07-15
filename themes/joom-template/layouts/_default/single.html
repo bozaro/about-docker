@@ -21,6 +21,7 @@
 		<h1>{{ .Title }}</h1>
 		<p>{{ .Site.Params.author }}</p>
 	</header>
+	{{ partial "slide-first.html" . }}
 	{{ .Content }}
 	{{ partial "slide-last.html" . }}
 	<div class="progress"></div>
