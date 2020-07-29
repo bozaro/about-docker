@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<title>Подробнее о Docker</title>
+	<meta charset="utf-8">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="generator" content="Hugo 0.50" />
+	
+	<link rel="icon" href="../favicon.png" />
+	
+	<link rel="stylesheet" href="../shower/themes/ribbon/styles/screen-16x10.css">
+	<link rel="stylesheet" href="../css/style.css">
+	<link rel="stylesheet" href="../highlight.js/styles/idea.min.css">
+
+	<script src="../jquery/jquery.min.js"></script>
+	<script src="../jquery-qrcode/jquery.qrcode.min.js"></script>
+</head>
+<body class="shower list no-math">
+	<header class="caption">
+		<h1>Подробнее о Docker</h1>
+		<p>Навроцкий Артем</p>
+	</header>
+	
+<section class="slide clear" style="padding: 0" id="cover">
+    <h2 class="shout">Подробнее о Docker</h2>
+    <div class="place bottom right" style="padding: 50px">Навроцкий Артем</div>
+</section>
+
+	
+<section class="slide">
+    <h2>Подробнее о Docker</h2>
+    <img src="../docker.svg" style="position: absolute; bottom: 50px; right: 50px; width: 320px"/>
+    <ul>
+        <li>Сборка контейнеров
+            <ul>
+                <li>Ловушки RUN-команды</li>
+                <li>Multi-stage builds</li>
+                <li>Health check</li>
+                <li>Сигналы</li>
+                <li>Варианты сборки контейнеров</li>
+            </ul>
+        </li>
+        <li>Best practics
+            <ul>
+                <li>Чистка образов в Docker Registry</li>
+                <li>Запуск нескольких процессов контейнере</li>
+                <li>Docker vs Jenkins</li>
+            </ul>
+        </li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Сборка контейнеров</h2>
+</section>
+
+<section class="slide">
+    <h2>Нужно быть аккуратыми с RUN-командой</h2>
+    <p>При повторной сборке образов, Docker считает, что если не менялись входные данные, то можно использовать
+        результат предыдущей сборки. Это заметно ускоряет повторную сборку контейнера.</p>
+    <p>Но директива <code>RUN</code> не является "чистой функцией" и зависит от внешних факторов.</p>
+    <p>В результате после изменения Dockerfile может возникнуть ситуация, что <code>RUN</code> команды будут выполняться
+        в сильно разное время.</p>
+</section>
+
+<section class="slide">
+    <h2>Пример проблемы с RUN-командой</h2>
+    <h3>Было:</h3>
+    <pre><code class="dockerfile">RUN apt -y update
+RUN apt -y install curl nginx</code></pre>
+    <h3>Заменили на:</h3>
+    <pre><code class="dockerfile">RUN apt -y update
+RUN apt -y install curl nginx git</code></pre>
+    <h3>В итоге:</h3>
+    <pre><code class="dockerfile"># docker используент кэш недельной давности
+RUN apt -y update
+# docker пытается выполнить команду, но кэш apt не актуален
+RUN apt -y install curl nginx git</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Решение проблемы с RUN-командой</h2>
+    <h3>Заменить:</h3>
+    <pre><code class="dockerfile">RUN apt -y update
+RUN apt -y install curl nginx</code></pre>
+    <h3>На:</h3>
+    <pre><code class="dockerfile">RUN apt -y update && \
+    apt -y install curl nginx && \
+    rm -rf /var/lib/apt/lists/*</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Multi-stage builds</h2>
+    <p>При сборке Docker-образов создаётся много слоёв, которые содержат различные временные данные и лишние
+        зависимости.</p>
+    <p>Для уменьшения размера образов имеет смысл разбить Dockerfile на несколько образов:</p>
+    <ul>
+        <li>Образ со сборкой</li>
+        <li>Образ с финальным дистрибутивом</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Multi-stage builds</h2>
+    <h3>Dockerfile</h3>
+    <pre><code class="dockerfile">FROM golang:1.7.3 AS build
+WORKDIR /go/src/github.com/alexellis/href-counter/
+RUN go get -d -v golang.org/x/net/html
+COPY app.go .
+RUN CGO_ENABLED=0 go build -o /go/bin/app .
+
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=build /go/bin/app .
+CMD ["./app"]
+</code></pre>
+    <p><a href="https://docs.docker.com/develop/develop-images/multistage-build/">https://docs.docker.com/develop/develop-images/multistage-build/</a>
+    </p>
+</section>
+
+<section class="slide">
+    <h2>Кэширование сборки</h2>
+    <pre><code class="shell">$ docker pull docker.joom.it/helm:latest
+$ docker build --cache-from=docker.joom.it/helm:latest .</code></pre>
+    <ul>
+        <li>Если указать <code>--cache-from</code>, то данный образ будет переиспользоваться при сборке. Локальный кэш
+            сборки при этом игнорируется.
+        </li>
+        <li>Если указано несколько <code>--cache-from</code>, то приоритет образов не определён.</li>
+        <li>Для multi-stage сборок надо отдельно указывать <code>--cache-from</code> для каждого промежуточного слоя.
+        </li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>HEALTHCHECK</h2>
+    <h3>Dockerfile</h3>
+    <pre><code class="dockerfile">FROM nginx:1.17.7
+RUN apt-get update && apt-get install -y curl
+HEALTHCHECK \
+    --interval=5s \
+    --timeout=1s \
+    --retries=3 CMD curl --head http://localhost/
+</code></pre>
+    <pre style="font-size: 60%"><code class="shell">$ docker build -q -t test . && docker run --rm -it test
+sha256:d2064caeda2e5c32d0d39a17c9b2d71e27dbdd6d93b2d6f2361802ea60235d34
+127.0.0.1 - - [10/Jul/2020:10:54:45 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+127.0.0.1 - - [10/Jul/2020:10:54:50 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+127.0.0.1 - - [10/Jul/2020:10:54:55 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+127.0.0.1 - - [10/Jul/2020:10:55:00 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+127.0.0.1 - - [10/Jul/2020:10:55:05 +0000] "HEAD / HTTP/1.1" 200 0 "-" "curl/7.64.0" "-"
+</code> </pre>
+</section>
+
+<section class="slide">
+    <h2>HEALTHCHECK</h2>
+    <h3>Статус контейнера</h3>
+    <pre style="font-size: 55%"><code class="shell">$ docker ps
+CONTAINER ID  IMAGE  COMMAND                 CREATED        STATUS
+027b1a3d2cd0  test   "nginx -g 'daemon of…"  1 second ago   Up Less than a second (health: starting)
+
+$ docker ps
+CONTAINER ID  IMAGE  COMMAND                 CREATED        STATUS
+027b1a3d2cd0  test   "nginx -g 'daemon of…"  9 seconds ago  Up 8 seconds (healthy)
+
+$ docker inspect 027b1a3d2cd0 | jq ".[0].State.Health.Status"
+"healthy"
+</code> </pre>
+</section>
+
+<section class="slide">
+    <h2>В чем разница по поведению?</h2>
+    <h3>a/Dockerfile</h3>
+    <pre><code class="dockerfile">FROM ubuntu
+CMD /bin/sleep 600
+</code></pre>
+    <h3>b/Dockerfile</h3>
+    <pre><code class="dockerfile">FROM ubuntu
+CMD ["/bin/sleep", "600"]</code></pre>
+    <pre><code class="shell">$ docker build -t test .
+$ docker run --rm --name test test</code></pre>
+    <p>У контейнеров будет разная реакция на:</p>
+    <pre><code class="shell">$ sudo killall -SIGTERM sleep</code></pre>
+</section>
+
+<section class="slide">
+    <h2>В чем разница по поведению?</h2>
+    <h3>CMD /bin/sleep 600</h3>
+    <pre style="font-size: 90%"><code class="shell">$ docker exec test ps
+    PID TTY          TIME CMD
+      1 ?        00:00:00 sh
+      7 ?        00:00:00 sleep
+      8 ?        00:00:00 ps
+</code></pre>
+
+    <h3>CMD ["/bin/sleep", "600"]</h3>
+    <pre style="font-size: 90%"><code class="shell">$ docker exec test ps
+    PID TTY          TIME CMD
+      1 ?        00:00:00 sleep
+      6 ?        00:00:00 ps
+</code></pre>
+
+    <p>PID = 1 имеет достаточно специфическое поведение с точки зрения обработки сигналов.</p>
+</section>
+
+<section class="slide">
+    <h2>Встроенный init</h2>
+    <h3>docker run --init</h3>
+    <pre style="font-size: 90%"><code class="shell">$ docker exec test ps
+    PID TTY          TIME CMD
+      1 ?        00:00:00 docker-init
+      6 ?        00:00:00 sleep
+      7 ?        00:00:00 ps
+</code></pre>
+    <div class="important"><p>Флаг <code>--init</code> отсутсвует при запуске контейнеров в Kubernetes.</p></div>
+</section>
+
+<section class="slide">
+    <h2>Минималистичный init</h2>
+    <h3>tini (<a href="https://github.com/krallin/tini">https://github.com/krallin/tini</a>)</h3>
+    <pre style="font-size: 80%"><code class="dockerfile">FROM ubuntu
+ADD https://github.com/krallin/tini/releases/download/v0.19.0/tini /tini
+RUN chmod +x /tini
+ENTRYPOINT ["/tini", "--"]
+CMD ["/bin/sleep", "600"]
+</code></pre>
+    <br/>
+    <pre style="font-size: 90%"><code class="shell">$ docker exec test ps
+    PID TTY          TIME CMD
+      1 ?        00:00:00 tini
+      6 ?        00:00:00 sleep
+      7 ?        00:00:00 ps
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Ubuntu vs Alpine</h2>
+    <h3>ubuntu/Dockerfile</h3>
+    <pre><code class="dockerfile">FROM ubuntu
+CMD /bin/sleep 600
+</code></pre>
+    <p>Shell в Ubuntu прокидывает <code>SIGTERM</code> до дочернего процесса.</p>
+    <h3>alpine/Dockerfile</h3>
+    <pre><code class="dockerfile">FROM alpine
+CMD /bin/sleep 600
+</code></pre>
+    <p>Shell в Alpine не прокидывает <code>SIGTERM</code> до дочернего процесса.</p>
+</section>
+
+<section class="slide">
+    <h2>Контекст сборки</h2>
+    <p>При сборке образа указывается корневой каталог контекста сборки.</p>
+    <p>Контекст сборки копируется с локальной машины на Docker Daemon.</p>
+    <pre><code class="shell">$ docker build .
+
+Sending build context to Docker daemon  6.51 MB
+...
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Контекст сборки</h2>
+    <p>Для исключения файлов из контекста сборки используется файл <code>.dockerignore</code>.</p>
+    <pre><code class="shell">$ cat .dockerignore
+# comment
+*/temp*
+*/*/temp*
+temp?
+</code></pre>
+    <div class="next">
+        <p><b>Интересный факт:</b></p>
+        <p>Файл <code>Dockerfile</code> может находиться вне контекста и его смело можно добавлять в
+            <code>.dockerignore</code>.</p>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Сборка с BuildKit</h2>
+    <pre><code class="shell">$ DOCKER_BUILDKIT=1 docker build</code></pre>
+    <h3>Плюсы</h3>
+    <ul>
+        <li>Не копируется весь контекст в Docker Daemon (данные копируются лениво)</li>
+        <li>Добавлена опция <code>--secret</code></li>
+        <li>Более приятное отображение процесса сборки</li>
+    </ul>
+    <h3>Минусы</h3>
+    <ul>
+        <li>Фича экспериментальная и не опробованная</li>
+    </ul>
+    <p><a href="https://docs.docker.com/develop/develop-images/build_enhancements/">https://docs.docker.com/develop/develop-images/build_enhancements/</a>
+    </p>
+</section>
+
+<section class="slide">
+    <h2>Сборка с BuildKit</h2>
+    <pre><code class="shell">$ echo 'WARMACHINEROX' > mysecret.txt
+$ DOCKER_BUILDKIT=1 docker build --progress=plain \
+    --no-cache --secret id=mysecret,src=mysecret.txt .
+</code></pre>
+    <h3>Dockerfile</h3>
+    <pre style="font-size: 90%"><code class="dockerfile"># syntax = docker/dockerfile:1.0-experimental
+FROM alpine
+
+# shows secret from default secret location
+RUN --mount=type=secret,id=mysecret cat /run/secrets/mysecret
+
+# shows secret from custom secret location
+RUN --mount=type=secret,id=mysecret,dst=/foobar cat /foobar</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Время сборки backend-а</h2>
+    <p>Статистика сборки (начало 2020):</p>
+    <pre><code class="text">Execution statistics:
+  docker push     <mark>20m7.591993776s</mark>
+  docker build    <mark>10m52.346187972s</mark>
+  shell command   4m51.205196455s
+  go build        <mark>3m36.109218439s</mark>
+  docker pull     19.589956997s
+  docker image rm 3.795116679s
+  file rm         1.217284781s
+  docker file     7.277674ms
+Build completed: 7m43.878900367s</code></pre>
+    <p>Отображается wall clock time при сборке в несколько потоков. Но всё равно сильно выделяется время на сборку
+        контейнеров.</p>
+</section>
+
+<section class="slide">
+    <h2>Время сборки backend-а</h2>
+    <h3>Время docker build</h3>
+    <p>Сборка каждого Dockerfile отправляет контекст сборки (в нашем случае туда входит только исполняемый файл) в
+        Docker Host.</p>
+    <p>Каждая комадна в Dockerfile провоцирет создание временного Docker-контейнера.</p>
+    <p>Есть ощущение, что параллельное выполнение <code>docker build</code> частично сериализуется где-то внутри Docker
+        Host.</p>
+    <h3>Время docker push</h3>
+    <p>Во время <code>docker push</code> львиную долю времени занимает сжатие образов GZip-ом.</p>
+</section>
+
+<section class="slide">
+    <h2>Альтернативные способы сборки</h2>
+    <h3><a href="https://github.com/GoogleContainerTools/kaniko">github.com/GoogleContainerTools/kaniko</a></h3>
+    <ul>
+        <li>Kaniko частично убирает сериализацию внутри Docker Host, так позволяет вынести сборку за его пределы</li>
+        <li>Kaniko проседает за счет времени на запуск Docker контейнеров</li>
+    </ul>
+    <h3><a href="https://github.com/joomcode/go-porter">github.com/joomcode/go-porter</a></h3>
+    <ul>
+        <li>Не использует эмуляцию файловой системы для сторонних процессов, за счет чего выполняет Dockerfile более
+            эффективно
+        </li>
+        <li>Не поддерживает команду <code>RUN</code> by design</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Best practics</h2>
+</section>
+
+<section class="slide">
+    <h2>Не используйте тэг в latest</h2>
+    <p>Нельзя использовать тэг <code>latest</code> при деплое в production.</p>
+    <p>Особенно если деплой в Kubernetes.</p>
+    <ul>
+        <li class="next">Если вы выкатываете версию без принудительного <code>pull</code>, то может быть запущен образ,
+            собранный несколько <strike>месяцев</strike> дней назад.
+        </li>
+        <li class="next">Если вы выкатываете версию с принудительным <code>pull</code>, то при переезде pod-а может быть
+            запущен образ, собранный через несколько дней после деплоя.
+        </li>
+        <li class="next">При использовании latest-тега в CI теряется воспроизводимость сборки.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Не собирайте контейнеры руками</h2>
+    <p>Никогда не заливайте контейнеры, собранные локально в Docker Registry.</p>
+    <p>Все контейнеры для Docker Registry должны собраться через CI:</p>
+    <ul>
+        <li>У коллег не должно возникать вопросов о происхождении образа</li>
+        <li>Надо регулярно проверять собираемость образов из-за различных внешних зависимостей (был прецедент, когда
+            контейнер перестал собиратся после удаления <code>ppa</code> с <code>ffmpeg</code>)
+        </li>
+    </ul>
+    <p>У нас есть инфраструктура для сборки простых образов в репозитории: <a
+                href="https://github.com/joomcode/docker-images">github.com/joomcode/docker-images</a></p>
+</section>
+
+<section class="slide">
+    <h2>LABEL-ы с информацией о контейнере</h2>
+    <p>При сборке docker-образов крайне желательно заполнять label-ы, чтобы не было вопросов из серии "откуда вообще
+        этот образ взялся":</p>
+    <dl style="font-size: 80%">
+        <dt>org.opencontainers.image.created</dt>
+        <dd>дата создания образа</dd>
+
+        <dt>org.opencontainers.image.ref.ci</dt>
+        <dd>ссылка на сборку образа в CI</dd>
+
+        <dt>org.opencontainers.image.ref.dockerfile</dt>
+        <dd>имя Dockerfile из которого собран образ</dd>
+
+        <dt>org.opencontainers.image.ref.dockerfile</dt>
+        <dd>имя Dockerfile из которого собран образ</dd>
+
+        <dt>org.opencontainers.image.revision</dt>
+        <dd>ревизия, от которой собран образ</dd>
+
+        <dt>org.opencontainers.image.source</dt>
+        <dd>репозиторий, из которого собран образ</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>LABEL-ы с информацией о контейнере</h2>
+    <p>Пример:</p>
+    <pre><code class="text" style="font-size: 70%">com.joom.retention.maxCount: 5
+com.joom.retention.maxCountGroup: master
+org.opencontainers.image.created: 2020-06-25T16:20:56Z
+org.opencontainers.image.ref.ci: https://jenkins.joom.it/job/docker-images/job/...
+org.opencontainers.image.ref.dockerfile: backend-api-test-base/Dockerfile
+org.opencontainers.image.revision: 41a1d8a485ae38311b141e7c355acf081dcc7f11
+org.opencontainers.image.source: https://github.com/joomcode/docker-images.git
+</code></pre>
+    <p>
+        Аннотации взяты отсюда: <a href="https://github.com/opencontainers/image-spec/blob/master/annotations.md">https://github.com/opencontainers/image-spec/blob/master/annotations.md</a>
+    </p>
+    <a href="https://www.notion.so/joomteam/Docker-image-style-guide-6f9e2542f3e24a69b6d21bfa1bbd9761">
+        <div id="image-style-guide" class="place bottom right" style="padding: 50px"></div>
+    </a>
+    <script>
+        jQuery('#image-style-guide').qrcode({
+            width: 170,
+            height: 170,
+            text: "https://www.notion.so/joomteam/Docker-image-style-guide-6f9e2542f3e24a69b6d21bfa1bbd9761"
+        });
+    </script>
+</section>
+
+<section class="slide">
+    <h2>LABEL-ы с информацией о контейнере</h2>
+    <p>Чтобы не захламлять Dockerfile, можно воспользоваться конструкцией вида:</p>
+    <pre><code class="shell" style="font-size: 90%">$ docker build \
+    --label org.opencontainers.image.created=$buildDate \
+    --label org.opencontainers.image.ref.ci=$BUILD_URL \
+    --label org.opencontainers.image.ref.dockerfile=$dockerFile \
+    --label org.opencontainers.image.source=$GIT_URL \
+    --label org.opencontainers.image.revision=$GIT_COMMIT \
+    ...
+    </code></pre>
+</section>
+
+<section class="slide">
+    <h2>Garbage collection</h2>
+    <p>У нас в docker registry реализован механизм чистки более ненужных образов.</p>
+    <p>Ответственность за чистку образов возлагается на команды, которые эти образы используют.</p>
+    <ul>
+        <li>Каждая команда использует свой отдельный docker registry</li>
+        <li>Управление чисткой образов осуществляется через LABEL-ы</li>
+    </ul>
+    <a href="https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8">
+        <div id="registry-garbage-collector" class="place bottom right" style="padding: 50px"></div>
+    </a>
+    <script>
+        jQuery('#registry-garbage-collector').qrcode({
+            width: 170,
+            height: 170,
+            text: "https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8"
+        });
+    </script>
+</section>
+
+<section class="slide">
+    <h2>Garbage collection</h2>
+    <h3>Используемые при чистке репозиторием LABEL-ы:</h3>
+    <dl>
+        <dt>com.joom.retention.maxDays=3</dt>
+        <dd>Количество дней, после которых можно удалить docker-образ</dd>
+
+        <dt>com.joom.retention.maxCount=10</dt>
+        <dd>Количество образов, которые достаточно хранить</dd>
+
+        <dt>com.joom.retention.maxCountGroup=master</dt>
+        <dd>Группа, в которой удаляются образы по превышении количества</dd>
+
+        <dt>com.joom.retention.deployGroup=backend-master-123456</dt>
+        <dd>Объединение образов с одну группу (группа удаляется целиком)</dd>
+
+        <dt>com.joom.retention.pullProtectDays=90</dt>
+        <dd>Количество дней, которые образ будет сохраняться с момента последнего скачивания</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Запуск нескольких процессов</h2>
+    <p>Docker рассчитан на запуск одного процесса в контейнере.</p>
+    <p>Если приложение состоит из нескольких процессов, то есть следующие варианты:</p>
+    <ul>
+        <li>Разделить приложение на несколько контейнеров (Docker compose, Kubernetes)</li>
+        <li>Запустить несколько процессов в один контейнере</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Запуск нескольких процессов</h2>
+    <h3>Разделение на несколько контейнеров</h3>
+    <ul>
+        <li>Нужно какое-то конфигурирование для связывании контейнеров</li>
+        <li>Каждый контейнер будет иметь свои квоты на ресурсы</li>
+    </ul>
+    <h3>Запуск нескольких процессов в контейнере</h3>
+    <ul>
+        <li>Более простой запуск</li>
+        <li>Единый лимит по ресурсам на все процессы</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Docker compose</h2>
+    <h3>docker-compose.yml</h3>
+    <pre style="font-size: 80%"><code class="yaml">version: "3.8"
+services:
+  server:
+    build: server/
+    ports:
+     - 8080:80
+  client:
+    build: client/
+    command: python ./client.py
+    environment:
+     - SERVER=server:80
+    depends_on:
+     - server
+</code></pre>
+    <pre><code class="shell">$ docker-compose build && docker-compose up</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Docker compose</h2>
+    <ul>
+        <li>Позволяет запустить несколько контейнеров</li>
+        <li>Каждый контейнер по-умолчанию запущен с изолированной сетью и видит соседей по имени сервиса (например:
+            <code>http://server:80</code>)
+        </li>
+        <li>Директива <code>ports</code> прокидывает порты на хост-машину</li>
+        <li>При интерптерации <code>docker-compose.yml</code> в строках вида <code>${FOO}</code> и <code>$FOO</code>
+            подставляются переменные окружения
+        </li>
+        <li>Значения по-умолчанию для переменных берутся из файла <code>.env</code></li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Запуск нескольких процессов</h2>
+    <p>Для запуска нескольких процессов в контейнере можно воспользоваться <a
+                href="http://supervisord.org/">supervisord</a>.</p>
+    <h3>Dockerfile</h3>
+    <pre style="font-size: 65%"><code class="dockerfile">FROM ubuntu
+RUN apt-get update \
+  && apt-get install -y supervisor nginx \
+  && rm -rf /var/lib/apt/lists/*
+COPY nginx.conf /etc/supervisor/conf.d/
+CMD ["/usr/bin/supervisord", "--nodaemon"]
+</code></pre>
+    <h3>nginx.conf</h3>
+    <pre style="font-size: 65%"><code class="ini">[program:nginx]
+command=/usr/sbin/nginx -g 'daemon off;'
+stdout_logfile=/var/log/nginx-stdout.log
+stderr_logfile=/var/log/nginx-stderr.log
+autostart=true
+autorestart=true
+numprocs=1
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Запуск нескольких процессов</h2>
+    <pre><code class="shell">$ supervisorctl status
+nginx          RUNNING   pid 7, uptime 0:00:56
+
+$ supervisorctl stop nginx
+nginx: stopped
+
+$ supervisorctl status
+nginx          STOPPED   Jul 10 02:10 PM
+
+$ supervisorctl start nginx
+nginx: started
+
+$ supervisorctl status
+nginx          RUNNING   pid 64, uptime 0:00:05
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Docker vs Jenkins</h2>
+    <p>Docker поддерживает запуск сборки "внутри" Docker-контейнера из коробки:</p>
+    <ul>
+        <li>Можно указать имя Docker-образа</li>
+        <li>Можно собирать образ из Dockerfile</li>
+    </ul>
+    <p>Docker compose при этом не поддерживается.</p>
+</section>
+
+<section class="slide">
+    <h2>Jenkins: docker image</h2>
+    <pre style="font-size: 75%"><code>pipeline {
+  agent {
+    docker {
+      image "golang:1.13.9-alpine3.11"
+      args "--hostname ${env.JOB_NAME.replace('/', '-')}-${env.BUILD_NUMBER}"
+      customWorkspace "workspace/example"
+      label "onspot"
+    }
+  }
+  ...
+}
+
+
+</code></pre>
+    <ul>
+        <li>Быстрая инициализация рабочего окружения</li>
+        <li>Не очень удобно модифицировать тестовое окружение</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Jenkins: dockerfile</h2>
+    <pre style="font-size: 75%"><code>pipeline {
+  agent {
+    docker {
+      dir "jenkins"
+      filename "Dockerfile"
+      additionalBuildArgs "--pull"
+      args "--hostname ${env.JOB_NAME.replace('/', '-')}-${env.BUILD_NUMBER}"
+      customWorkspace "workspace/example"
+      label "onspot"
+    }
+  }
+  ...
+}
+</code></pre>
+    <ul>
+        <li>Долгая инициализация тестового окружения при первом старте</li>
+        <li>Тестовое окружение версионируется вместе с кодом</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Jenkins: общие особенности</h2>
+    <ul>
+        <li>Лишние образы не удаляются после сборки (утекает место).</li>
+        <li>Не поддерживается ENTRYPOINT и HEALTHCHECK: Jenkins agent начинает взаимодействие с контейнером не дожидаясь
+            завершения запуска севрисов внутри него.
+        </li>
+        <li>По-хорошем надо руками прокидывать <code>hostname</code>.</li>
+        <li>Сам Jenkins agent выполняется за пределами Docker-контейнера: взаимодействие с данными Docker-контейнера
+            идут через общую файловую систему, при чем пути должны совпадать.
+        </li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Полезные ссылки</h2>
+    <ul style="font-size: 80%">
+        <li>Документация на Docker<br/>
+            <a href="https://docs.docker.com/">https://docs.docker.com/</a>
+        </li>
+        <li>Полезные команды<br/>
+            <a href="https://github.com/wsargent/docker-cheat-sheet">https://github.com/wsargent/docker-cheat-sheet</a>
+        </li>
+        <li>Аннотации для контейнеров<br/>
+            <a href="https://www.notion.so/joomteam/Docker-image-style-guide-6f9e2542f3e24a69b6d21bfa1bbd9761">https://www.notion.so/joomteam/Docker-image-style-guide-6f9e2542f3e24a69b6d21bfa1bbd9761</a>
+        </li>
+        <li>Чистка контейнеров<br/><a
+                    href="https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8">https://www.notion.so/joomteam/Docker-registry-garbage-collector-1cef030221764a3fa9f8fe85d9b6d2f8</a>
+        </li>
+    </ul>
+</section>
+
+	<section class="slide" id="see-more">
+    <h2 class="shout">Спасибо за внимание!</h2>
+</section>
+
+	<div class="progress"></div>
+	
+	<footer class="badge">
+		<a href="http://github.com/bozaro/about-docker/">Fork me on GitHub</a>
+	</footer>
+	
+	<script src="../shower/shower.min.js"></script>
+	<script src="../highlight.js/highlight.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+	
+
+
+	<script src="../mathjax/MathJax.js?config=AM_HTMLorMML-full"></script>
+	<script>
+MathJax.Hub.Config({
+	asciimath2jax: {
+		inlineMath: [['$','$'],['\\(','\\)']],
+		processClass: "math",
+		ignoreClass: "no-math"
+	},
+	root: "..\/mathjax/"
+});
+	</script>
+
+
+</body>
+</html>
