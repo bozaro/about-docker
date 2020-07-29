@@ -25,15 +25,15 @@ description: |
     <h2>Подробнее о Docker</h2>
     <img src="../docker.svg" style="position: absolute; bottom: 50px; right: 50px; width: 320px"/>
     <ul>
-            <li>Сборка контейнеров
-                <ul>
-                    <li>Ловушки RUN-команды</li>
-                    <li>Multi-stage builds</li>
-                    <li>Health check</li>
-                    <li>Сигналы</li>
-                    <li>Варианты сборки контейнеров</li>
-                </ul>
-            </li>
+        <li>Сборка контейнеров
+            <ul>
+                <li>Ловушки RUN-команды</li>
+                <li>Multi-stage builds</li>
+                <li>Health check</li>
+                <li>Сигналы</li>
+                <li>Варианты сборки контейнеров</li>
+            </ul>
+        </li>
         <li>Best practics
             <ul>
                 <li>Чистка образов в Docker Registry</li>
@@ -243,6 +243,33 @@ CMD /bin/sleep 600
 </section>
 
 <section class="slide">
+    <h2>Контекст сборки</h2>
+    <p>При сборке образа указывается корневой каталог контекста сборки.</p>
+    <p>Контекст сборки копируется с локальной машины на Docker Daemon.</p>
+    <pre><code class="shell">$ docker build .
+
+Sending build context to Docker daemon  6.51 MB
+...
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Контекст сборки</h2>
+    <p>Для исключения файлов из контекста сборки используется файл <code>.dockerignore</code>.</p>
+    <pre><code class="shell">$ cat .dockerignore
+# comment
+*/temp*
+*/*/temp*
+temp?
+</code></pre>
+    <div class="next">
+        <p><b>Интересный факт:</b></p>
+        <p>Файл <code>Dockerfile</code> может находиться вне контекста и его смело можно добавлять в
+            <code>.dockerignore</code>.</p>
+    </div>
+</section>
+
+<section class="slide">
     <h2>Сборка с BuildKit</h2>
     <pre><code class="shell">$ DOCKER_BUILDKIT=1 docker build</code></pre>
     <h3>Плюсы</h3>
@@ -298,7 +325,7 @@ Build completed: 7m43.878900367s</code></pre>
     <h3>Время docker build</h3>
     <p>Сборка каждого Dockerfile отправляет контекст сборки (в нашем случае туда входит только исполняемый файл) в
         Docker Host.</p>
-    <p>Каждая комадна в Dockerfile провоцирет создаёт временный Docker-контейнер.</p>
+    <p>Каждая комадна в Dockerfile провоцирет создание временного Docker-контейнера.</p>
     <p>Есть ощущение, что параллельное выполнение <code>docker build</code> частично сериализуется где-то внутри Docker
         Host.</p>
     <h3>Время docker push</h3>
@@ -330,13 +357,13 @@ Build completed: 7m43.878900367s</code></pre>
     <p>Нельзя использовать тэг <code>latest</code> при деплое в production.</p>
     <p>Особенно если деплой в Kubernetes.</p>
     <ul>
-        <li>Если вы выкатываете версию без принудительного <code>pull</code>, то может быть запущен образ, собранный
-            несколько <strike>месяцев</strike> дней назад.
+        <li class="next">Если вы выкатываете версию без принудительного <code>pull</code>, то может быть запущен образ,
+            собранный несколько <strike>месяцев</strike> дней назад.
         </li>
-        <li>Если вы выкатываете версию с принудительным <code>pull</code>, то при переезде pod-а может быть запущен
-            образ, собранный через несколько дней после деплоя.
+        <li class="next">Если вы выкатываете версию с принудительным <code>pull</code>, то при переезде pod-а может быть
+            запущен образ, собранный через несколько дней после деплоя.
         </li>
-        <li>При использовании latest-тега в CI теряется воспроизводимость сборки.</li>
+        <li class="next">При использовании latest-тега в CI теряется воспроизводимость сборки.</li>
     </ul>
 </section>
 
@@ -346,7 +373,9 @@ Build completed: 7m43.878900367s</code></pre>
     <p>Все контейнеры для Docker Registry должны собраться через CI:</p>
     <ul>
         <li>У коллег не должно возникать вопросов о происхождении образа</li>
-        <li>Надо регулярно проверять собираемость образов из-за различных внешних зависимостей</li>
+        <li>Надо регулярно проверять собираемость образов из-за различных внешних зависимостей (был прецедент, когда
+            контейнер перестал собиратся после удаления <code>ppa</code> с <code>ffmpeg</code>)
+        </li>
     </ul>
     <p>У нас есть инфраструктура для сборки простых образов в репозитории: <a
                 href="https://github.com/joomcode/docker-images">github.com/joomcode/docker-images</a></p>
